@@ -5,23 +5,32 @@ import dev.toma.configuration.config.ConfigHolder;
 import dev.toma.configuration.config.adapter.TypeAdapter;
 import dev.toma.configuration.config.value.ConfigValue;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.Map;
 
-public class S2C_SendConfigData implements CustomPacketPayload {
+public record S2C_SendConfigData(String config) implements CustomPacketPayload {
+
     public static final ResourceLocation ID = new ResourceLocation(Configuration.MODID, "send_config_data");
-
-    private final String config;
-
-    public S2C_SendConfigData(String config) {
-        this.config = config;
-    }
+    public static final Type<S2C_SendConfigData> TYPE = new Type<>(ID);
+    public static final StreamCodec<FriendlyByteBuf, S2C_SendConfigData> CODEC = StreamCodec.of(
+            (buffer, packet) -> packet.encode(buffer),
+            S2C_SendConfigData::decode
+    );
 
     @Override
-    public void write(FriendlyByteBuf buffer) {
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    public void handle(IPayloadContext context) {
+        // nothing needed
+    }
+
+    private void encode(FriendlyByteBuf buffer) {
         buffer.writeUtf(this.config);
         ConfigHolder.getConfig(this.config).ifPresent(data -> {
             Map<String, ConfigValue<?>> serialized = data.getNetworkSerializedFields();
@@ -36,7 +45,7 @@ public class S2C_SendConfigData implements CustomPacketPayload {
         });
     }
 
-    public static S2C_SendConfigData decode(FriendlyByteBuf buffer) {
+    private static S2C_SendConfigData decode(FriendlyByteBuf buffer) {
         String config = buffer.readUtf();
         S2C_SendConfigData packet = new S2C_SendConfigData(config);
         int i = buffer.readInt();
@@ -53,15 +62,6 @@ public class S2C_SendConfigData implements CustomPacketPayload {
             }
         });
         return packet;
-    }
-
-    public static void handle(S2C_SendConfigData packet, IPayloadContext context) {
-
-    }
-
-    @Override
-    public ResourceLocation id() {
-        return ID;
     }
 
     @SuppressWarnings("unchecked")
