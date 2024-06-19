@@ -1,38 +1,74 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        maven {
+            name = 'NeoForged'
+            url = 'https://maven.neoforged.net/releases'
+        }
+    }
+}
 plugins {
-    id 'multiloader-loader'
-    id 'net.neoforged.gradle.userdev' version "${neoforge_userdev_version}"
+    id 'java-library'
+    id 'idea'
+    id 'java'
+    id 'net.neoforged.gradle.userdev' version "${neogradle_userdev}"
 }
 
-// Automatically enable neoforge AccessTransformers if the file exists
-// This location is hardcoded in FML and can not be changed.
-// https://github.com/neoforged/FancyModLoader/blob/a952595eaaddd571fbc53f43847680b00894e0c1/loader/src/main/java/net/neoforged/fml/loading/moddiscovery/ModFile.java#L118
-def at = file('src/main/resources/META-INF/accesstransformer.cfg')
+version = "${project.minecraft_version}-${project.version}"
+group = project.mod_group
+archivesBaseName = "${project.mod_id}" + "-neoforge"
+
+def at = project(":common").file("src/main/resources/META-INF/accesstransformer.cfg")
 if (at.exists()) {
     minecraft.accessTransformers.file at
 }
+
 runs {
     configureEach {
+        systemProperty 'forge.logging.console.level', 'debug'
         modSource project.sourceSets.main
     }
+
     client {
-        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        workingDirectory project.file('run/client')
     }
+
     server {
-        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-        programArgument '--nogui'
-    }
-
-    gameTestServer {
-        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-    }
-
-    data {
-        programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        workingDirectory project.file('run/server')
     }
 }
 
-sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+sourceSets.main.resources.srcDir 'src/generated/resources'
 
 dependencies {
-    implementation "net.neoforged:neoforge:${neoforge_version}"
+    implementation "net.neoforged:neoforge:${project.neoforge_version}"
+    compileOnly project(":common")
+}
+
+tasks.named('compileJava', JavaCompile).configure {
+    source(project(":common").sourceSets.main.allSource)
+}
+
+processResources {
+    from project(":common").sourceSets.main.resources
+}
+
+jar {
+    manifest {
+        attributes([
+                "Specification-Title"     : "${mod_name}",
+                "Specification-Vendor"    : "${mod_authors}",
+                "Specification-Version"   : project.jar.archiveVersion,
+                "Implementation-Title"    : "${mod_name}",
+                "Implementation-Version"  : project.jar.archiveVersion,
+                "Implementation-Vendor"   : "${mod_authors}",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+
+    exclude("${mod_id}.accesswidener")
 }

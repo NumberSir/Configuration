@@ -3,16 +3,16 @@
   "id": "${mod_id}",
   "version": "${version}",
   "name": "${mod_name}",
-  "description": "${description}",
+  "description": "${mod_description}",
   "authors": [
-    "${mod_author}"
+    "${mod_authors}"
   ],
   "contact": {
     "homepage": "https://www.curseforge.com/minecraft/mc-mods/configuration",
     "sources": "https://github.com/Toma1O6/Configuration",
     "issues": "https://github.com/Toma1O6/Configuration/issues"
   },
-  "license": "${license}",
+  "license": "${mod_licence}",
   "icon": "logo.png",
   "environment": "*",
   "entrypoints": {
