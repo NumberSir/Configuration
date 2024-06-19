@@ -47,7 +47,12 @@ public final class FileWatchManager {
         }
         Path configDir = Paths.get("./config");
         try {
-            Files.walkFileTree(configDir, new SimpleFileVisitor<Path>() {
+            File configDirFile = configDir.toFile();
+            if (!configDirFile.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                configDirFile.mkdir();
+            }
+            Files.walkFileTree(configDir, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                     WatchKey key = dir.register(FileWatchManager.this.service, StandardWatchEventKinds.ENTRY_MODIFY);
