@@ -10,7 +10,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
-public class DoubleArrayValue extends ConfigValue<double[]> implements ArrayValue {
+public class DoubleArrayValue extends AbstractArrayValue<double[]> {
 
     private boolean fixedSize;
     private DecimalValue.Range range;

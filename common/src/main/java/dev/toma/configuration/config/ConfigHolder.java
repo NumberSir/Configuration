@@ -8,6 +8,7 @@ import dev.toma.configuration.config.format.IConfigFormatHandler;
 import dev.toma.configuration.config.io.ConfigIO;
 import dev.toma.configuration.config.value.ConfigValue;
 import dev.toma.configuration.config.value.ObjectValue;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -73,6 +74,7 @@ public final class ConfigHolder<CFG> {
      * this method. Instead, use {@link Configuration#registerConfig(Class, IConfigFormatHandler)} for config registration
      * @param holder Config holder to be registered
      */
+    @ApiStatus.Internal
     public static void registerConfig(ConfigHolder<?> holder) {
         REGISTERED_CONFIGS.put(holder.configId, holder);
         ConfigIO.processConfig(holder);
@@ -84,6 +86,7 @@ public final class ConfigHolder<CFG> {
      * @return Optional with config holder when such object exists
      * @param <CFG> Config type
      */
+    @ApiStatus.Internal
     @SuppressWarnings("unchecked")
     public static <CFG> Optional<ConfigHolder<CFG>> getConfig(String id) {
         ConfigHolder<CFG> value = (ConfigHolder<CFG>) REGISTERED_CONFIGS.get(id);
@@ -94,6 +97,7 @@ public final class ConfigHolder<CFG> {
      * Groups all configs from registry into Group-List
      * @return Mapped values
      */
+    @ApiStatus.Internal
     public static Map<String, List<ConfigHolder<?>>> getConfigGroupingByGroup() {
         return REGISTERED_CONFIGS.values().stream().collect(Collectors.groupingBy(ConfigHolder::getGroup));
     }
@@ -103,6 +107,7 @@ public final class ConfigHolder<CFG> {
      * @param group Group ID
      * @return List with config holders. May be empty.
      */
+    @ApiStatus.Internal
     public static List<ConfigHolder<?>> getConfigsByGroup(String group) {
         return REGISTERED_CONFIGS.values().stream()
                 .filter(configHolder -> configHolder.group.equals(group))
@@ -113,6 +118,7 @@ public final class ConfigHolder<CFG> {
      * Obtain all configs which have some network serialized values
      * @return Set of config holders which need to be synchronized to client
      */
+    @ApiStatus.Internal
     public static Set<String> getSynchronizedConfigs() {
         return REGISTERED_CONFIGS.entrySet()
                 .stream()
@@ -127,6 +133,28 @@ public final class ConfigHolder<CFG> {
      */
     public void addFileRefreshListener(IFileRefreshListener<CFG> listener) {
         this.fileRefreshListeners.add(Objects.requireNonNull(listener));
+    }
+
+    /**
+     * Allows you to obtain value for specific key within your config. For example when you have the following config
+     * structure with integer value on path {@code modid.numbers.myNumber}, and you want to obtain its value using key for any
+     * reason (for example in json datasource definitions), you can use this method with path parameter set
+     * to {@code myConfigHolder.getValue("modid.numbers.myNumber", Integer.class)} to obtain the value. <br>
+     * The path can be also used for array values, for example when you want to get 3rd element in array, specify the path with array
+     * index {@code modid.numbers.numberArray.2} <br>
+     *
+     * Keep in mind that this method fails quietly with only warning being logged to console!
+     *
+     * @param path The path to your variable in config
+     * @param expectedType Expected data type of the value
+     * @return Optional with the specified value or {@link Optional#empty()} when the value does not exist or has different data type
+     *
+     * @since 2.3.0
+     */
+    public <V> Optional<V> getValue(String path, Class<V> expectedType) {
+        String[] keys = path.split("\\.");
+        Iterator<String> stringIterator = Arrays.asList(keys).iterator();
+        return ObjectValue.getChildValue(stringIterator, expectedType, valueMap);
     }
 
     /**

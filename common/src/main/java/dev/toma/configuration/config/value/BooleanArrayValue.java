@@ -10,7 +10,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
-public class BooleanArrayValue extends ConfigValue<boolean[]> implements ArrayValue {
+public class BooleanArrayValue extends AbstractArrayValue<boolean[]> {
 
     private boolean fixedSize;
 

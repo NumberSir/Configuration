@@ -10,7 +10,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
-public class LongArrayValue extends ConfigValue<long[]> implements ArrayValue {
+public class LongArrayValue extends AbstractArrayValue<long[]> {
 
     private boolean fixedSize;
     private IntegerValue.Range range;

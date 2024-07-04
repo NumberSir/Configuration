@@ -13,7 +13,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
-public class StringArrayValue extends ConfigValue<String[]> implements ArrayValue {
+public class StringArrayValue extends AbstractArrayValue<String[]> {
 
     private boolean fixedSize;
     private Pattern pattern;

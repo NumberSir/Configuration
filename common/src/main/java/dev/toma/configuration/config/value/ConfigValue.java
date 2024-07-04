@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
-public abstract class ConfigValue<T> implements Supplier<T>{
+public abstract class ConfigValue<T> implements Supplier<T> {
 
     protected final ValueData<T> valueData;
     private T value;

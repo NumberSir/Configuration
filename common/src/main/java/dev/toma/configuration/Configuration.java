@@ -10,6 +10,9 @@ import dev.toma.configuration.service.services.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
+import java.util.Optional;
+
 public final class Configuration {
 
     public static final String MODID = "configuration";
@@ -52,5 +55,24 @@ public final class Configuration {
             ConfigIO.FILE_WATCH_MANAGER.addTrackedConfig(holder);
         }
         return holder;
+    }
+
+    /**
+     * Allows you to get your config holder based on ID
+     * @param id Config ID
+     * @return Optional with config holder when such object exists
+     * @param <CFG> Config type
+     */
+    public static <CFG> Optional<ConfigHolder<CFG>> getConfig(String id) {
+        return ConfigHolder.getConfig(id);
+    }
+
+    /**
+     * Returns list of config holders for the specified group
+     * @param group Group ID
+     * @return List with config holders. May be empty.
+     */
+    public static List<ConfigHolder<?>> getConfigsByGroup(String group) {
+        return ConfigHolder.getConfigsByGroup(group);
     }
 }

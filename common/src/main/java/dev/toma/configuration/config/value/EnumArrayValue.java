@@ -9,7 +9,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 
-public class EnumArrayValue<E extends Enum<E>> extends ConfigValue<E[]> implements ArrayValue {
+public class EnumArrayValue<E extends Enum<E>> extends AbstractArrayValue<E[]> {
 
     private boolean fixedSize;
 

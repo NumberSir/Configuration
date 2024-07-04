@@ -10,7 +10,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
-public class FloatArrayValue extends ConfigValue<float[]> implements ArrayValue {
+public class FloatArrayValue extends AbstractArrayValue<float[]> {
 
     private boolean fixedSize;
     private DecimalValue.Range range;
