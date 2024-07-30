@@ -26,11 +26,11 @@ public interface IConfigValueReadable<T> extends Supplier<T> {
     }
 
     /**
-     * Obtain config value for specific mode.
+     * Obtain config value for specific mode. <br>
+     * This can also return neither of the set/pending values, but instead value received from server for
+     * {@link dev.toma.configuration.config.Configurable.Synchronized} values when active on server. Also, active
+     * value is returned for {@link IConfigValue.Mode#PENDING} when no unsaved value is present, so this will <b>never</b> return {@code null}
      * @param mode The {@link IConfigValue.Mode} for config value.
-     * @apiNote This can also return neither of the set/pending values, but instead value received from server for
-     *          {@link dev.toma.configuration.config.Configurable.Synchronized} values when active on server. Also, active
-     *          value is returned for {@link IConfigValue.Mode#PENDING} when no unsaved value is present, so this will <b>never</b> return {@code null}
      * @return The currently held value for given {@link IConfigValue.Mode}
      */
     T get(IConfigValue.Mode mode);
@@ -61,8 +61,8 @@ public interface IConfigValueReadable<T> extends Supplier<T> {
     Collection<String> getChildrenKeys();
 
     /**
+     * Does not contain full path of the field, so this cannot be used for example for obtaining {@link IConfigValue} references.
      * @return ID of this single value
-     * @apiNote Does not contain full path of the field, so this cannot be used for example for obtaining {@link IConfigValue} references.
      * Instead, you have to use the {@link IConfigValue#getPath()} for that.
      */
     String getId();

@@ -18,8 +18,8 @@ public @interface Configurable {
 
     /**
      * Allows you to specify how localization key will be generated. Your choices are either
-     * <li> {@link LocalizationKey#SHORT} - old behaviour, only the field name is used for translation key
-     * <li> {@link LocalizationKey#FULL} - For nested fields will prefix field names of all parent values
+     * {@link LocalizationKey#SHORT} - old behaviour, only the field name is used for translation key
+     * {@link LocalizationKey#FULL} - For nested fields will prefix field names of all parent values
      * @return {@link LocalizationKey} to be used by this field. By default, {@link LocalizationKey#SHORT} is used.
      * @since 3.0
      */
