@@ -1,110 +1,58 @@
 package dev.toma.configuration.config.value;
 
-import dev.toma.configuration.config.ConfigUtils;
 import dev.toma.configuration.config.Configurable;
 import dev.toma.configuration.config.adapter.TypeAdapter;
 import dev.toma.configuration.config.exception.ConfigValueMissingException;
 import dev.toma.configuration.config.format.IConfigFormat;
+import dev.toma.configuration.config.validate.NumberRange;
 import net.minecraft.network.FriendlyByteBuf;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
 
-public class IntArrayValue extends AbstractArrayValue<int[]> {
+public class IntArrayValue extends NumericArrayValue<Integer> {
 
-    private boolean fixedSize;
-    private IntegerValue.Range range;
-
-    public IntArrayValue(ValueData<int[]> valueData) {
-        super(valueData);
+    public IntArrayValue(ValueData<Integer[]> valueData) {
+        super(valueData, Integer.MIN_VALUE, Integer.MAX_VALUE);
     }
 
     @Override
-    public boolean isFixedSize() {
-        return fixedSize;
+    public NumberRange<Integer> getValueRange(Field field) {
+        Configurable.Range range = field.getAnnotation(Configurable.Range.class);
+        return range != null
+                ? NumberRange.interval(this, (int) Math.max(range.min(), min()), (int) Math.min(range.max(), max()))
+                : NumberRange.all(this);
     }
 
     @Override
-    protected void readFieldData(Field field) {
-        this.fixedSize = field.getAnnotation(Configurable.FixedSize.class) != null;
-        Configurable.Range intRange = field.getAnnotation(Configurable.Range.class);
-        this.range = intRange != null ? IntegerValue.Range.newBoundedRange(intRange.min(), intRange.max()) : IntegerValue.Range.unboundedInt();
-    }
-
-    @Override
-    protected int[] getCorrectedValue(int[] in) {
-        if (this.fixedSize) {
-            int[] defaultArray = this.valueData.getDefaultValue();
-            if (in.length != defaultArray.length) {
-                ConfigUtils.logArraySizeCorrectedMessage(this.getId(), Arrays.toString(in), Arrays.toString(defaultArray));
-                in = defaultArray;
-            }
-        }
-        if (this.range == null)
-            return in;
-        for (int i = 0; i < in.length; i++) {
-            int value = in[i];
-            if (!this.range.isWithin(value)) {
-                int corrected = this.range.clamp(value);
-                ConfigUtils.logCorrectedMessage(this.getId() + "[" + i + "]", value, corrected);
-                in[i] = corrected;
-            }
-        }
-        return in;
+    public Integer createElementInstance() {
+        return 0;
     }
 
     @Override
     public void serialize(IConfigFormat format) {
-        format.writeIntArray(this.getId(), this.get());
+        format.writeIntArray(this.getId(), this.get(Mode.SAVED));
     }
 
     @Override
     protected void deserialize(IConfigFormat format) throws ConfigValueMissingException {
-        this.set(format.readIntArray(this.getId()));
+        this.setValue(format.readIntArray(this.getId()));
     }
 
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("[");
-        int[] ints = this.get();
-        for (int i = 0; i < ints.length; i++) {
-            builder.append(this.elementToString(ints[i]));
-            if (i < ints.length - 1) {
-                builder.append(",");
-            }
-        }
-        builder.append("]");
-        return builder.toString();
-    }
-
-    public IntegerValue.Range getRange() {
-        return range;
-    }
-
-    public static final class Adapter extends TypeAdapter {
+    public static final class Adapter extends TypeAdapter<Integer[]> {
 
         @Override
-        public void encodeToBuffer(ConfigValue<?> value, FriendlyByteBuf buffer) {
-            int[] arr = (int[]) value.get();
-            buffer.writeInt(arr.length);
-            for (int v : arr) {
-                buffer.writeInt(v);
-            }
+        public void encodeToBuffer(ConfigValue<Integer[]> value, FriendlyByteBuf buffer) {
+            saveToBuffer(value.get(), buffer, FriendlyByteBuf::writeInt);
         }
 
         @Override
-        public Object decodeFromBuffer(ConfigValue<?> value, FriendlyByteBuf buffer) {
-            int[] arr = new int[buffer.readInt()];
-            for (int i = 0; i < arr.length; i++) {
-                arr[i] = buffer.readInt();
-            }
-            return arr;
+        public Integer[] decodeFromBuffer(ConfigValue<Integer[]> value, FriendlyByteBuf buffer) {
+            return readFromBuffer(buffer, Integer[]::new, FriendlyByteBuf::readInt);
         }
 
         @Override
-        public ConfigValue<?> serialize(String name, String[] comments, Object value, TypeSerializer serializer, AdapterContext context) throws IllegalAccessException {
-            return new IntArrayValue(ValueData.of(name, (int[]) value, context, comments));
+        public ConfigValue<Integer[]> serialize(TypeAttributes<Integer[]> attributes, Object instance, TypeSerializer serializer) throws IllegalAccessException {
+            return new IntArrayValue(ValueData.of(attributes));
         }
     }
 }

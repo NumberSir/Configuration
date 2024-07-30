@@ -1,110 +1,58 @@
 package dev.toma.configuration.config.value;
 
-import dev.toma.configuration.config.ConfigUtils;
 import dev.toma.configuration.config.Configurable;
 import dev.toma.configuration.config.adapter.TypeAdapter;
 import dev.toma.configuration.config.exception.ConfigValueMissingException;
 import dev.toma.configuration.config.format.IConfigFormat;
+import dev.toma.configuration.config.validate.NumberRange;
 import net.minecraft.network.FriendlyByteBuf;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
 
-public class DoubleArrayValue extends AbstractArrayValue<double[]> {
+public class DoubleArrayValue extends NumericArrayValue<Double> {
 
-    private boolean fixedSize;
-    private DecimalValue.Range range;
-
-    public DoubleArrayValue(ValueData<double[]> valueData) {
-        super(valueData);
+    public DoubleArrayValue(ValueData<Double[]> valueData) {
+        super(valueData, -Double.MAX_VALUE, Double.MAX_VALUE);
     }
 
     @Override
-    public boolean isFixedSize() {
-        return fixedSize;
-    }
-
-    @Override
-    protected void readFieldData(Field field) {
-        this.fixedSize = field.getAnnotation(Configurable.FixedSize.class) != null;
+    public NumberRange<Double> getValueRange(Field field) {
         Configurable.DecimalRange decimalRange = field.getAnnotation(Configurable.DecimalRange.class);
-        this.range = decimalRange != null ? DecimalValue.Range.newBoundedRange(decimalRange.min(), decimalRange.max()) : DecimalValue.Range.unboundedDouble();
+        return decimalRange != null
+                ? NumberRange.interval(this, decimalRange.min(), decimalRange.max())
+                : NumberRange.all(this);
     }
 
     @Override
-    protected double[] getCorrectedValue(double[] in) {
-        if (this.fixedSize) {
-            double[] defaultArray = this.valueData.getDefaultValue();
-            if (in.length != defaultArray.length) {
-                ConfigUtils.logArraySizeCorrectedMessage(this.getId(), Arrays.toString(in), Arrays.toString(defaultArray));
-                in = defaultArray;
-            }
-        }
-        if (this.range == null)
-            return in;
-        for (int i = 0; i < in.length; i++) {
-            double value = in[i];
-            if (!this.range.isWithin(value)) {
-                double corrected = this.range.clamp(value);
-                ConfigUtils.logCorrectedMessage(this.getId() + "[" + i + "]", value, corrected);
-                in[i] = corrected;
-            }
-        }
-        return in;
+    public Double createElementInstance() {
+        return 0.0;
     }
 
     @Override
     protected void serialize(IConfigFormat format) {
-        format.writeDoubleArray(this.getId(), this.get());
+        format.writeDoubleArray(this.getId(), this.get(Mode.SAVED));
     }
 
     @Override
     protected void deserialize(IConfigFormat format) throws ConfigValueMissingException {
-        this.set(format.readDoubleArray(this.getId()));
+        this.setValue(format.readDoubleArray(this.getId()));
     }
 
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("[");
-        double[] doubles = this.get();
-        for (int i = 0; i < doubles.length; i++) {
-            builder.append(this.elementToString(doubles[i]));
-            if (i < doubles.length - 1) {
-                builder.append(",");
-            }
-        }
-        builder.append("]");
-        return builder.toString();
-    }
-
-    public DecimalValue.Range getRange() {
-        return range;
-    }
-
-    public static final class Adapter extends TypeAdapter {
+    public static final class Adapter extends TypeAdapter<Double[]> {
 
         @Override
-        public void encodeToBuffer(ConfigValue<?> value, FriendlyByteBuf buffer) {
-            double[] arr = (double[]) value.get();
-            buffer.writeInt(arr.length);
-            for (double v : arr) {
-                buffer.writeDouble(v);
-            }
+        public void encodeToBuffer(ConfigValue<Double[]> value, FriendlyByteBuf buffer) {
+            saveToBuffer(value.get(), buffer, FriendlyByteBuf::writeDouble);
         }
 
         @Override
-        public Object decodeFromBuffer(ConfigValue<?> value, FriendlyByteBuf buffer) {
-            double[] arr = new double[buffer.readInt()];
-            for (int i = 0; i < arr.length; i++) {
-                arr[i] = buffer.readDouble();
-            }
-            return arr;
+        public Double[] decodeFromBuffer(ConfigValue<Double[]> value, FriendlyByteBuf buffer) {
+            return readFromBuffer(buffer, Double[]::new, FriendlyByteBuf::readDouble);
         }
 
         @Override
-        public ConfigValue<?> serialize(String name, String[] comments, Object value, TypeSerializer serializer, AdapterContext context) throws IllegalAccessException {
-            return new DoubleArrayValue(ValueData.of(name, (double[]) value, context, comments));
+        public ConfigValue<Double[]> serialize(TypeAttributes<Double[]> attributes, Object instance, TypeSerializer serializer) throws IllegalAccessException {
+            return new DoubleArrayValue(ValueData.of(attributes));
         }
     }
 }

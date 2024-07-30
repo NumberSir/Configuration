@@ -34,6 +34,7 @@ public final class FileWatchManager {
             this.executorService = Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread t = new Thread(r);
                 t.setName("Auto-Sync thread");
+                t.setDaemon(true);
                 return t;
             });
         }
@@ -72,7 +73,6 @@ public final class FileWatchManager {
                         ConfigHolder<?> holder = this.configPaths.get(strPath);
                         if (holder != null) {
                             ConfigIO.reloadClientValues(holder);
-                            holder.dispatchFileRefreshEvent();
                             this.processCache.add(strPath);
                         }
                     });

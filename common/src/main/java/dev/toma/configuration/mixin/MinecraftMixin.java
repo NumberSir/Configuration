@@ -22,13 +22,35 @@ public abstract class MinecraftMixin extends ReentrantBlockableEventLoop<Runnabl
 
     @Inject(
             method = "clearClientLevel",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;resetData()V")
+            at = @At("RETURN")
     )
     private void configuration$reloadClientConfigs(Screen screen, CallbackInfo ci) {
+        ConfigIO.setEnvironment(ConfigIO.ConfigEnvironment.MENU);
         ConfigHolder.getSynchronizedConfigs().stream()
                 .map(ConfigHolder::getConfig)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .forEach(ConfigIO::reloadClientValues);
+                .forEach(ConfigHolder::restoreClientStoredValues);
+    }
+
+    @Inject(
+            method = "disconnect(Lnet/minecraft/client/gui/screens/Screen;Z)V",
+            at = @At("RETURN")
+    )
+    private void configuration$disconnect(Screen screen, boolean canceled, CallbackInfo ci) {
+        ConfigIO.setEnvironment(ConfigIO.ConfigEnvironment.MENU);
+        ConfigHolder.getSynchronizedConfigs().stream()
+                .map(ConfigHolder::getConfig)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .forEach(ConfigHolder::restoreClientStoredValues);
+    }
+
+    @Inject(
+            method = "onGameLoadFinished",
+            at = @At("RETURN")
+    )
+    private void configuration$onGameLoadFinished(CallbackInfo ci) {
+        ConfigIO.setEnvironment(ConfigIO.ConfigEnvironment.MENU);
     }
 }

@@ -37,7 +37,7 @@ public class StringValue extends ConfigValue<String> {
     }
 
     @Override
-    protected String getCorrectedValue(String in) {
+    protected String validateValue(String in) {
         if (this.pattern != null) {
             if (!this.pattern.matcher(in).matches()) {
                 String defaultValue = this.valueData.getDefaultValue();
@@ -53,12 +53,12 @@ public class StringValue extends ConfigValue<String> {
 
     @Override
     protected void serialize(IConfigFormat format) {
-        format.writeString(this.getId(), this.get());
+        format.writeString(this.getId(), this.get(Mode.SAVED));
     }
 
     @Override
     protected void deserialize(IConfigFormat format) throws ConfigValueMissingException {
-        this.set(format.readString(this.getId()));
+        this.setValue(format.readString(this.getId()));
     }
 
     public Pattern getPattern() {
@@ -69,21 +69,21 @@ public class StringValue extends ConfigValue<String> {
         return descriptor;
     }
 
-    public static final class Adapter extends TypeAdapter {
+    public static final class Adapter extends TypeAdapter<String> {
 
         @Override
-        public void encodeToBuffer(ConfigValue<?> value, FriendlyByteBuf buffer) {
-            buffer.writeUtf((String) value.get());
+        public void encodeToBuffer(ConfigValue<String> value, FriendlyByteBuf buffer) {
+            buffer.writeUtf(value.get());
         }
 
         @Override
-        public Object decodeFromBuffer(ConfigValue<?> value, FriendlyByteBuf buffer) {
+        public String decodeFromBuffer(ConfigValue<String> value, FriendlyByteBuf buffer) {
             return buffer.readUtf();
         }
 
         @Override
-        public ConfigValue<?> serialize(String name, String[] comments, Object value, TypeSerializer serializer, AdapterContext context) throws IllegalAccessException {
-            return new StringValue(ValueData.of(name, (String) value, context, comments));
+        public ConfigValue<String> serialize(TypeAttributes<String> attributes, Object instance, TypeSerializer serializer) throws IllegalAccessException {
+            return new StringValue(ValueData.of(attributes));
         }
     }
 }

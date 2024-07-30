@@ -1,5 +1,7 @@
 package dev.toma.configuration;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import dev.toma.configuration.config.Config;
 import dev.toma.configuration.config.ConfigHolder;
 import dev.toma.configuration.config.format.ConfigFormats;
@@ -9,21 +11,45 @@ import dev.toma.configuration.service.ServiceHelper;
 import dev.toma.configuration.service.services.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.ApiStatus;
 
-import java.util.List;
 import java.util.Optional;
 
+/**
+ * Main API entrypoint. Used for config registration
+ *
+ * @since 2.0
+ * @author Toma
+ */
 public final class Configuration {
 
     public static final String MODID = "configuration";
+
+    @ApiStatus.Internal
     public static final Logger LOGGER = LogManager.getLogger("Configuration");
+    @ApiStatus.Internal
     public static final Platform PLATFORM = ServiceHelper.loadService(Platform.class);
 
+    @ApiStatus.Internal
     public static void setup() {
         if (PLATFORM.isDevelopmentEnvironment()) {
-            registerConfig(TestingConfig.class, ConfigFormats.yaml());
+            registerConfig(TestingConfig.class, ConfigFormats.YAML);
         }
+
     }
+
+    /**
+     * Codec for obtaining config holder by config ID. Could be useful for datapack config value reading for example.
+     * @since 3.0
+     */
+    public static final Codec<ConfigHolder<?>> BY_ID_CODEC = Codec.STRING.comapFlatMap(
+            id -> {
+                Optional<ConfigHolder<Object>> optional = getConfig(id);
+                return optional.map(DataResult::success)
+                        .orElseGet(() -> DataResult.error(() -> "Unknown config ID '" + id + "'"));
+            },
+            ConfigHolder::getConfigId
+    );
 
     /**
      * Registers your config class. Config will be immediately loaded upon calling.
@@ -34,6 +60,7 @@ public final class Configuration {
      * @return Config holder containing your config instance. You obtain it by calling
      * {@link ConfigHolder#getConfigInstance()} method.
      * @param <CFG> Config type
+     * @since 2.0
      */
     public static <CFG> ConfigHolder<CFG> registerConfig(Class<CFG> cfgClass, IConfigFormatHandler formatFactory) {
         Config cfg = cfgClass.getAnnotation(Config.class);
@@ -62,17 +89,9 @@ public final class Configuration {
      * @param id Config ID
      * @return Optional with config holder when such object exists
      * @param <CFG> Config type
+     * @since 2.3.0
      */
     public static <CFG> Optional<ConfigHolder<CFG>> getConfig(String id) {
         return ConfigHolder.getConfig(id);
-    }
-
-    /**
-     * Returns list of config holders for the specified group
-     * @param group Group ID
-     * @return List with config holders. May be empty.
-     */
-    public static List<ConfigHolder<?>> getConfigsByGroup(String group) {
-        return ConfigHolder.getConfigsByGroup(group);
     }
 }

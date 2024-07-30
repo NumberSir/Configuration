@@ -1,18 +1,21 @@
 package dev.toma.configuration.config;
 
 import dev.toma.configuration.Configuration;
-import dev.toma.configuration.client.IValidationHandler;
 import dev.toma.configuration.config.adapter.TypeAdapter;
-import dev.toma.configuration.config.adapter.TypeAdapters;
+import dev.toma.configuration.config.adapter.TypeAdapterManager;
+import dev.toma.configuration.config.adapter.TypeAttributes;
+import dev.toma.configuration.config.adapter.TypeMapper;
 import dev.toma.configuration.config.format.IConfigFormatHandler;
 import dev.toma.configuration.config.io.ConfigIO;
 import dev.toma.configuration.config.value.ConfigValue;
+import dev.toma.configuration.config.value.IConfigValue;
+import dev.toma.configuration.config.value.IConfigValueReadable;
 import dev.toma.configuration.config.value.ObjectValue;
+import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -23,11 +26,12 @@ import java.util.stream.Collectors;
  *
  * @param <CFG> Your config type
  * @author Toma
+ * @since 2.0
  */
 public final class ConfigHolder<CFG> {
 
     // Map of all registered configs
-    private static final Map<String, ConfigHolder<?>> REGISTERED_CONFIGS = new HashMap<>();
+    private static final Map<String, ConfigHolder<?>> REGISTERED_CONFIGS = new LinkedHashMap<>();
     // Unique config ID
     private final String configId;
     // Config filename without extension
@@ -43,9 +47,9 @@ public final class ConfigHolder<CFG> {
     // Mapping of all config values
     private final Map<String, ConfigValue<?>> valueMap = new LinkedHashMap<>();
     // Map of fields which will be synced to client upon login
-    private final Map<String, ConfigValue<?>> networkSerializedFields = new HashMap<>();
-    // Set of file refresh listeners
-    private final Set<IFileRefreshListener<CFG>> fileRefreshListeners = new HashSet<>();
+    private final Map<String, ConfigValue<?>> networkSerializedFields = new LinkedHashMap<>();
+    // Title component for GUI displays
+    private final Component title;
     // Lock for async operations
     private final Object lock = new Object();
 
@@ -67,6 +71,7 @@ public final class ConfigHolder<CFG> {
         }
         this.format = format;
         this.loadNetworkFields(valueMap, networkSerializedFields);
+        this.title = Component.translatable("config.screen." + this.configId);
     }
 
     /**
@@ -122,17 +127,37 @@ public final class ConfigHolder<CFG> {
     public static Set<String> getSynchronizedConfigs() {
         return REGISTERED_CONFIGS.entrySet()
                 .stream()
-                .filter(e -> e.getValue().networkSerializedFields.size() > 0)
+                .filter(e -> !e.getValue().networkSerializedFields.isEmpty())
                 .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /**
-     * Register new file refresh listener for this config holder
-     * @param listener The file listener
+     * @return Whether any config value does not match the in memory value
      */
-    public void addFileRefreshListener(IFileRefreshListener<CFG> listener) {
-        this.fileRefreshListeners.add(Objects.requireNonNull(listener));
+    public boolean isChanged() {
+        return this.values().stream().anyMatch(ConfigValue::isChanged);
+    }
+
+    /**
+     * @return Whether any config value does not match the default value
+     */
+    public boolean isChangedFromDefault() {
+        return this.values().stream().anyMatch(ConfigValue::isChangedFromDefault);
+    }
+
+    /**
+     * Saves all pending values in value wrappers as long as their {@link dev.toma.configuration.config.Configurable.UpdateRestriction} allow it
+     */
+    public void save() {
+        this.values().forEach(ConfigValue::save);
+    }
+
+    /**
+     * Restores client saved values and clears network value cache on each value
+     */
+    public void restoreClientStoredValues() {
+        this.values().forEach(ConfigValue::clearNetworkValues);
     }
 
     /**
@@ -143,7 +168,7 @@ public final class ConfigHolder<CFG> {
      * The path can be also used for array values, for example when you want to get 3rd element in array, specify the path with array
      * index {@code modid.numbers.numberArray.2} <br>
      *
-     * Keep in mind that this method fails quietly with only warning being logged to console!
+     * <b>Keep in mind that this method fails quietly with only warning being logged to console!</b>
      *
      * @param path The path to your variable in config
      * @param expectedType Expected data type of the value
@@ -155,6 +180,29 @@ public final class ConfigHolder<CFG> {
         String[] keys = path.split("\\.");
         Iterator<String> stringIterator = Arrays.asList(keys).iterator();
         return ObjectValue.getChildValue(stringIterator, expectedType, valueMap);
+    }
+
+    /**
+     * Allows you to obtain config value for specific key within your config. For example when you have the following config
+     * structure with integer value on path {@code modid.numbers.myNumber}, and you want to obtain its value wrapper,
+     * you can use this method with path parameter set to {@code myConfigHolder.getConfigValue("modid.numbers.myNumber", Integer.class)}
+     * to obtain the value wrapper. <br>
+     * Unlike the {@link ConfigHolder#getValue(String, Class)} method, array index access will return the entire array wrapper.
+     * This is because internally arrays do not hold config values for each array element. So you will have to use the config value to access
+     * elements manually. So the {@code expectedType} attribute has to be {@code ARRAY}!<br>
+     *
+     * <b>Keep in mind that this method fails quietly with only warning being logged to console!</b>
+     *
+     * @param path The path to your variable in config
+     * @param expectedType Expected data type of the value
+     * @return Optional with the specified value or {@link Optional#empty()} when the value does not exist or has different data type
+     *
+     * @since 3.0
+     */
+    public <V> Optional<IConfigValue<V>> getConfigValue(String path, Class<V> expectedType) {
+        String[] keys = path.split("\\.");
+        Iterator<String> stringIterator = Arrays.asList(keys).iterator();
+        return ObjectValue.getChild(stringIterator, expectedType, valueMap);
     }
 
     /**
@@ -195,6 +243,7 @@ public final class ConfigHolder<CFG> {
     /**
      * @return File format factory for this config
      */
+    @ApiStatus.Internal
     public IConfigFormatHandler getFormat() {
         return format;
     }
@@ -202,6 +251,7 @@ public final class ConfigHolder<CFG> {
     /**
      * @return Collection of mapped config values
      */
+    @ApiStatus.Internal
     public Collection<ConfigValue<?>> values() {
         return this.valueMap.values();
     }
@@ -209,6 +259,7 @@ public final class ConfigHolder<CFG> {
     /**
      * @return Map ID-ConfigValue for this config
      */
+    @ApiStatus.Internal
     public Map<String, ConfigValue<?>> getValueMap() {
         return valueMap;
     }
@@ -216,25 +267,33 @@ public final class ConfigHolder<CFG> {
     /**
      * @return Map ID-ConfigValue for network serialization
      */
+    @ApiStatus.Internal
     public Map<String, ConfigValue<?>> getNetworkSerializedFields() {
         return networkSerializedFields;
     }
 
     /**
-     * Dispatches file refresh event to all registered listeners
+     * @return Localized component name of this config
      */
-    public void dispatchFileRefreshEvent() {
-        this.fileRefreshListeners.forEach(listener -> listener.onFileRefresh(this));
+    public Component getTitle() {
+        return title;
     }
 
     /**
      * @return Lock for async operations. Used for IO operations currently
      */
+    @ApiStatus.Internal
     public Object getLock() {
         return lock;
     }
 
-    private Map<String, ConfigValue<?>> serializeType(Class<?> type, Object instance, boolean saveValue) throws IllegalAccessException {
+    @ApiStatus.Internal
+    public static Collection<String> getRegisteredConfigs() {
+        return REGISTERED_CONFIGS.keySet();
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Map<String, ConfigValue<?>> serializeType(Class<?> type, Object instance, boolean saveValue) throws IllegalAccessException {
         Map<String, ConfigValue<?>> map = new LinkedHashMap<>();
         Field[] fields = type.getFields();
         for (Field field : fields) {
@@ -246,42 +305,27 @@ public final class ConfigHolder<CFG> {
                 Configuration.LOGGER.warn(ConfigIO.MARKER, "Skipping config field {}, only instance non-final types are supported", field);
                 continue;
             }
-            TypeAdapter adapter = TypeAdapters.forType(field.getType());
+            TypeAttributes<T> attributes = (TypeAttributes<T>) TypeAdapterManager.forType(field.getType());
+            TypeAdapter<T> adapter = attributes.adapter();
             if (adapter == null) {
                 Configuration.LOGGER.warn(ConfigIO.MARKER, "Missing adapter for type {}, skipping serialization", field.getType());
                 continue;
             }
             String[] comments = new String[0];
             Configurable.Comment comment = field.getAnnotation(Configurable.Comment.class);
+            boolean localizeComments = false;
             if (comment != null) {
                 comments = comment.value();
+                localizeComments = comment.localize();
             }
+            Configurable.LocalizationKey localizationType = value.key();
             field.setAccessible(true);
-            ConfigValue<?> cfgValue = adapter.serialize(field.getName(), comments, field.get(instance), (type1, instance1) -> serializeType(type1, instance1, false), new TypeAdapter.AdapterContext() {
-                @Override
-                public TypeAdapter getAdapter() {
-                    return adapter;
-                }
-
-                @Override
-                public Field getOwner() {
-                    return field;
-                }
-
-                @Override
-                public void setFieldValue(Object value) {
-                    field.setAccessible(true);
-                    try {
-                        adapter.setFieldValue(field, instance, value);
-                    } catch (IllegalAccessException e) {
-                        Configuration.LOGGER.error(ConfigIO.MARKER, "Failed to update config value for field {} from {} to a new value {} due to error {}", field.getName(), type, value, e);
-                    }
-                }
-            });
-            Configurable.ValueUpdateCallback callback = field.getAnnotation(Configurable.ValueUpdateCallback.class);
-            if (callback != null) {
-                this.processCallback(callback, type, instance, cfgValue);
-            }
+            Object fieldValue = field.get(instance);
+            TypeMapper<T, Object> mapper = attributes.mapper();
+            Object migratedField = mapper.migrate((T) fieldValue);
+            TypeAdapter.AdapterContext context = this.getAdapterContext(adapter, type, field, mapper, instance);
+            TypeAdapter.TypeAttributes<T> typeAttributes = new TypeAdapter.TypeAttributes<>(this.configId, field.getName(), (T) migratedField, context, localizationType, comments, localizeComments);
+            ConfigValue<?> cfgValue = adapter.serialize(typeAttributes, migratedField, (t, i) -> this.serializeType(t, i, false));
             cfgValue.processFieldData(field);
             map.put(field.getName(), cfgValue);
             if (saveValue) {
@@ -291,32 +335,6 @@ public final class ConfigHolder<CFG> {
         return map;
     }
 
-    private <T> void processCallback(Configurable.ValueUpdateCallback callback, Class<?> type, Object instance, ConfigValue<T> value) {
-        String methodName = callback.method();
-        try {
-            Class<?> valueType = value.getValueType();
-            if (callback.allowPrimitivesMapping()) {
-                valueType = ConfigUtils.remapPrimitiveType(valueType);
-            }
-            Method method = type.getDeclaredMethod(methodName, valueType, IValidationHandler.class);
-            ConfigValue.SetValueCallback<T> setValueCallback = (val, handler) -> {
-                try {
-                    method.setAccessible(true);
-                    method.invoke(instance, val, handler);
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    Configuration.LOGGER.error(ConfigIO.MARKER, "Error occurred while invoking {} method: {}", method, e);
-                }
-            };
-            value.setValueValidator(setValueCallback);
-            Configuration.LOGGER.debug(ConfigIO.MARKER, "Attached new value listener method '{}' for config value {}", methodName, value.getId());
-        } catch (NoSuchMethodException e) {
-            Configuration.LOGGER.error(ConfigIO.MARKER, "Unable to map method {} for config value {} due to {}", methodName, value.getId(), e);
-        } catch (Exception e) {
-            Configuration.LOGGER.fatal(ConfigIO.MARKER, "Fatal error occurred while trying to map value listener for {} method", methodName);
-            throw new RuntimeException("Value listener map failed", e);
-        }
-    }
-
     private <T> void assignValue(ConfigValue<T> value) {
         this.valueMap.put(value.getId(), value);
     }
@@ -324,24 +342,39 @@ public final class ConfigHolder<CFG> {
     private void loadNetworkFields(Map<String, ConfigValue<?>> src, Map<String, ConfigValue<?>> dest) {
         src.values().forEach(value -> {
             if (value instanceof ObjectValue objValue) {
-                Map<String, ConfigValue<?>> data = objValue.get();
+                Map<String, ConfigValue<?>> data = objValue.get(IConfigValueReadable.Mode.SAVED);
                 loadNetworkFields(data, dest);
             } else {
                 if (!value.shouldSynchronize())
                     return;
-                String path = value.getFieldPath();
+                String path = value.getPath();
                 dest.put(path, value);
             }
         });
     }
 
-    /**
-     * Listener which is triggered when config file changes on disk
-     * @param <CFG> Config type
-     * @author Toma
-     */
-    @FunctionalInterface
-    public interface IFileRefreshListener<CFG> {
-        void onFileRefresh(ConfigHolder<CFG> holder);
+    private TypeAdapter.AdapterContext getAdapterContext(TypeAdapter<?> parent, Class<?> type, Field field, TypeMapper<?, Object> mapper, Object instance) {
+        return new TypeAdapter.AdapterContext() {
+            @Override
+            public TypeAdapter<?> getAdapter() {
+                return parent;
+            }
+
+            @Override
+            public Field getOwner() {
+                return field;
+            }
+
+            @Override
+            public void setFieldValue(Object value) {
+                field.setAccessible(true);
+                try {
+                    Object remapped = mapper.rollback(value);
+                    parent.setFieldValue(field, instance, remapped);
+                } catch (IllegalAccessException e) {
+                    Configuration.LOGGER.error(ConfigIO.MARKER, "Failed to update config value for field {} from {} to a new value {} due to error {}", field.getName(), type, value, e);
+                }
+            }
+        };
     }
 }
