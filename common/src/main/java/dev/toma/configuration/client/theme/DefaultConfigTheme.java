@@ -14,7 +14,7 @@ public class DefaultConfigTheme {
         theme.setHeader(new ConfigTheme.Header(null, 0x99 << 24, 0xaaaaaa));
         theme.setFooter(new ConfigTheme.Footer(0x99 << 24));
         theme.setScrollbar(new ConfigTheme.Scrollbar(5, 0xFF << 24));
-        theme.setConfigEntry(new ConfigTheme.ConfigEntry(0xFFFFFF, style -> style.withItalic(true), 0x44FFFFFF));
+        theme.setConfigEntry(new ConfigTheme.ConfigEntry(0xAAAAAA, style -> style.withItalic(true), 0x44FFFFFF));
         theme.setBackgroundFillColor(0x55 << 24);
         theme.setWidgetTextColor(0xE0E0E0, 0xFFFFFF, 0x707070);
 
