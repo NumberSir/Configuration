@@ -75,7 +75,7 @@ public class StringDisplayAdapter extends AbstractDisplayAdapter {
             Matcher matcher = pattern.matcher(text);
             if (!matcher.matches()) {
                 String errorMessage = value.getErrorDescriptor();
-                MutableComponent errorLabel = errorMessage != null ? Component.translatable(errorMessage, text, pattern) : ClientErrors.invalidText(text, pattern);
+                MutableComponent errorLabel = errorMessage != null ? Component.translatable(errorMessage, text, pattern.toString()) : ClientErrors.invalidText(text, pattern);
                 container.setValidationResult(IValidationResult.error(errorLabel));
                 return;
             }
