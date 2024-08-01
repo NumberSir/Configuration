@@ -30,10 +30,11 @@ public class ConfigScreen extends AbstractConfigScreen {
     protected void init() {
         final int viewportMin = HEADER_HEIGHT;
         final int viewportHeight = this.height - viewportMin - FOOTER_HEIGHT;
-        this.pageSize = (viewportHeight - 20) / 25;
+        int spacing = 22;
+        this.pageSize = (viewportHeight - 20) / spacing;
         this.correctScrollingIndex(this.valueMap.size());
         List<ConfigValue<?>> values = new ArrayList<>(this.valueMap.values());
-        int errorOffset = (viewportHeight - 20) - (this.pageSize * 25 - 5);
+        int errorOffset = (viewportHeight - 20) - (this.pageSize * spacing - 5);
         int offset = 0;
         for (int i = this.index; i < this.index + this.pageSize; i++) {
             int j = i - this.index;
@@ -43,7 +44,7 @@ public class ConfigScreen extends AbstractConfigScreen {
             errorOffset -= correct;
             offset += correct;
             ConfigValue<?> value = values.get(i);
-            ConfigEntryWidget widget = addRenderableWidget(new ConfigEntryWidget(30, viewportMin + 10 + j * 25 + offset, this.width - 60, 20, value, this.getConfigId(), this.theme));
+            ConfigEntryWidget widget = addRenderableWidget(new ConfigEntryWidget(30, viewportMin + 10 + j * spacing + offset, this.width - 60, 20, value, this.getConfigId(), this.theme));
             widget.setDescriptionRenderer(this);
             TypeAdapter.AdapterContext context = value.getSerializationContext();
             Field field = context.getOwner();

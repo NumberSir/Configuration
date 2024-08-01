@@ -62,9 +62,10 @@ public class ArrayConfigScreen<V, C extends AbstractArrayValue<V>> extends Abstr
     protected void init() {
         final int viewportMin = HEADER_HEIGHT;
         final int viewportHeight = this.height - viewportMin - FOOTER_HEIGHT;
-        this.pageSize = (viewportHeight - 20) / 25;
+        int spacing = 22;
+        this.pageSize = (viewportHeight - 20) / spacing;
         this.correctScrollingIndex(this.getTotalSize());
-        int errorOffset = (viewportHeight - 20) - (this.pageSize * 25 - 5);
+        int errorOffset = (viewportHeight - 20) - (this.pageSize * spacing - 5);
         int offset = 0;
 
         Class<?> compType = array.get().getClass().getComponentType();
@@ -75,7 +76,7 @@ public class ArrayConfigScreen<V, C extends AbstractArrayValue<V>> extends Abstr
             int j = i - this.index;
             if (i >= this.sizeSupplier.get()) {
                 if (!this.fixedSize) {
-                    ThemedButtonWidget addElement = addRenderableWidget(new ThemedButtonWidget(30, viewportMin + 10 + j * 25 + offset, this.width - 60, 20, ADD_ELEMENT, theme));
+                    ThemedButtonWidget addElement = addRenderableWidget(new ThemedButtonWidget(30, viewportMin + 10 + j * spacing + offset, this.width - 60, 20, ADD_ELEMENT, theme));
                     addElement.setBackgroundRenderer(theme.getButtonBackground(addElement));
                     addElement.setClickListener((widget, mouseX, mouseY) -> {
                         this.addHandler.insertElement();
@@ -90,7 +91,7 @@ public class ArrayConfigScreen<V, C extends AbstractArrayValue<V>> extends Abstr
             ConfigValue<?> dummy = valueFactory.create(array.getId(), i);
             dummy.processFieldData(owner);
             Component label = this.getEntryLabel(dummy, i);
-            ConfigEntryWidget widget = addRenderableWidget(new ConfigEntryWidget(30, viewportMin + 10 + j * 25 + offset, this.width - 60, 20, label, dummy, this.getConfigId(), this.theme));
+            ConfigEntryWidget widget = addRenderableWidget(new ConfigEntryWidget(30, viewportMin + 10 + j * spacing + offset, this.width - 60, 20, label, dummy, this.getConfigId(), this.theme));
             widget.setDescriptionRenderer(this);
             if (adapter == null) {
                 Configuration.LOGGER.error(MARKER, "Missing display adapter for {} type, will not be displayed in GUI", compType.getSimpleName());

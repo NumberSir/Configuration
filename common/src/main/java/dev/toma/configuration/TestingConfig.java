@@ -6,7 +6,7 @@ import dev.toma.configuration.config.UpdateRestrictions;
 
 import java.util.regex.Pattern;
 
-@Config(id = "configuration-test", group = Configuration.MODID)
+@Config(id = Configuration.MODID)
 public final class TestingConfig {
 
     @Configurable
