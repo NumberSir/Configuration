@@ -74,12 +74,14 @@ public class ArrayConfigScreen<V, C extends AbstractArrayValue<V>> extends Abstr
         for (int i = this.index; i < this.index + this.pageSize; i++) {
             int j = i - this.index;
             if (i >= this.sizeSupplier.get()) {
-                ThemedButtonWidget addElement = addRenderableWidget(new ThemedButtonWidget(30, viewportMin + 10 + j * 25 + offset, this.width - 60, 20, ADD_ELEMENT, theme));
-                addElement.setBackgroundRenderer(theme.getButtonBackground(addElement));
-                addElement.setClickListener((widget, mouseX, mouseY) -> {
-                    this.addHandler.insertElement();
-                    this.init(minecraft, width, height);
-                });
+                if (!this.fixedSize) {
+                    ThemedButtonWidget addElement = addRenderableWidget(new ThemedButtonWidget(30, viewportMin + 10 + j * 25 + offset, this.width - 60, 20, ADD_ELEMENT, theme));
+                    addElement.setBackgroundRenderer(theme.getButtonBackground(addElement));
+                    addElement.setClickListener((widget, mouseX, mouseY) -> {
+                        this.addHandler.insertElement();
+                        this.init(minecraft, width, height);
+                    });
+                }
                 break;
             }
             int correct = errorOffset / (this.pageSize - j);
