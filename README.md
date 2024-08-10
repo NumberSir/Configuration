@@ -19,6 +19,7 @@ for correct Minecraft version and drop the `.jar` file into `mods` directory.
 In the following examples replace the `project.minecraft_version` and `project.configuration_version` by your used properties.
 
 - ![1.21](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepsy.io%2Fmvn%2Ftoma%2Fpublic%2Fdev%2Ftoma%2Fconfiguration%2Fconfiguration-1.21%2Fmaven-metadata.xml&versionSuffix=-common&label=1.21)
+- ![1.21.1](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepsy.io%2Fmvn%2Ftoma%2Fpublic%2Fdev%2Ftoma%2Fconfiguration%2Fconfiguration-1.21.1%2Fmaven-metadata.xml&versionSuffix=-common&label=1.21.1)
 
 
 First add maven repository into your root project `build.gradle` and into all subprojects
