@@ -2,6 +2,7 @@ package dev.toma.configuration.client.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.toma.configuration.Configuration;
+import dev.toma.configuration.ConfigurationSettings;
 import dev.toma.configuration.client.ConfigurationClient;
 import dev.toma.configuration.client.theme.ConfigTheme;
 import dev.toma.configuration.client.widget.ConfigEntryWidget;
@@ -60,6 +61,8 @@ public abstract class AbstractConfigScreen extends Screen implements ConfigEntry
         this.holder = configHolder;
         this.theme = ConfigurationClient.getConfigTheme(configHolder);
         this.last = previous;
+
+        ConfigurationSettings.loadSettings(); // Force load settings to memory
     }
 
     public String getConfigId() {
@@ -85,6 +88,17 @@ public abstract class AbstractConfigScreen extends Screen implements ConfigEntry
         graphics.fill(x, y1, x + width, y2, 0xFF888888);
         graphics.fill(x, y1, x + width - 1, y2 - 1, 0xFFEEEEEE);
         graphics.fill(x + 1, y1 + 1, x + width - 1, y2 - 1, 0xFFCCCCCC);
+    }
+
+    protected void addSettingsButton() {
+        ThemedButtonWidget settings = addRenderableWidget(new ThemedButtonWidget(width - 25, 5, 20, 20, Component.literal("..."), theme));
+        settings.setBackgroundRenderer(theme.getButtonBackground(settings));
+        settings.setClickListener((widget, mouseX, mouseY) -> {
+            ConfigSettingsScreen settingsScreen = new ConfigSettingsScreen(this);
+            this.minecraft.setScreen(settingsScreen);
+        });
+        settings.setTooltip(Tooltip.create(Component.translatable("options.title")));
+        settings.setTooltipDelay(Duration.ofMillis(300));
     }
 
     protected void addFooter() {

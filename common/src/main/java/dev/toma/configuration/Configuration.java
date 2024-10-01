@@ -35,7 +35,7 @@ public final class Configuration {
         if (PLATFORM.isDevelopmentEnvironment()) {
             registerConfig(TestingConfig.class, ConfigFormats.YAML);
         }
-
+        ConfigurationSettings.loadSettings();
     }
 
     /**

@@ -2,6 +2,7 @@ package dev.toma.configuration;
 
 import dev.toma.configuration.config.Config;
 import dev.toma.configuration.config.Configurable;
+import dev.toma.configuration.config.FieldVisibility;
 import dev.toma.configuration.config.UpdateRestrictions;
 
 import java.util.regex.Pattern;
@@ -35,6 +36,7 @@ public final class TestingConfig {
 
     @Configurable
     @Configurable.Gui.Slider
+    @Configurable.Gui.Visibility(FieldVisibility.ADVANCED)
     public short shortSlider = 0;
 
     @Configurable
@@ -48,6 +50,7 @@ public final class TestingConfig {
     @Configurable
     @Configurable.Range(min = 0)
     @Configurable.Gui.Slider
+    @Configurable.Gui.Visibility(FieldVisibility.HIDDEN)
     public int intSlider = 15;
 
     @Configurable

@@ -2,6 +2,7 @@ package dev.toma.configuration.config.value;
 
 import dev.toma.configuration.config.ConfigUtils;
 import dev.toma.configuration.config.Configurable;
+import dev.toma.configuration.config.FieldVisibility;
 import dev.toma.configuration.config.UpdateRestrictions;
 import dev.toma.configuration.config.adapter.TypeAdapter;
 import dev.toma.configuration.config.exception.ConfigValueMissingException;
@@ -30,6 +31,7 @@ public abstract class ConfigValue<T> implements IConfigValue<T> {
     private final List<IConfigValueValidator<T>> validators = new ArrayList<>();
     private AggregatedValidationResult validationResultHolder;
     private final List<IDescriptionProvider<T>> descriptionProviders = new ArrayList<>();
+    private FieldVisibility fieldVisibility = FieldVisibility.NORMAL;
 
     public ConfigValue(ValueData<T> valueData) {
         this.valueData = valueData;
@@ -204,6 +206,13 @@ public abstract class ConfigValue<T> implements IConfigValue<T> {
         } else if (this.updateRestriction.isRestricted()) {
             this.addDescriptionProvider(NoteDescriptionProvider.note(NoteDescriptionProvider.RESTRICTION.apply(this.updateRestriction)));
         }
+        Configurable.Gui.Visibility visibility = field.getAnnotation(Configurable.Gui.Visibility.class);
+        if (visibility != null && visibility.value() != FieldVisibility.NORMAL) {
+            this.fieldVisibility = visibility.value();
+            if (this.fieldVisibility == FieldVisibility.ADVANCED) {
+                this.addDescriptionProvider(NoteDescriptionProvider.note(FieldVisibility.ADVANCED.getLabel()));
+            }
+        }
         this.readFieldData(field);
     }
 
@@ -290,6 +299,10 @@ public abstract class ConfigValue<T> implements IConfigValue<T> {
             description.addAll(generated);
         }
         return description;
+    }
+
+    public final FieldVisibility getFieldVisibility() {
+        return this.fieldVisibility;
     }
 
     private AggregatedValidationResult performAdditionalValidations(T value) {

@@ -1,6 +1,7 @@
 package dev.toma.configuration.client.screen;
 
 import dev.toma.configuration.Configuration;
+import dev.toma.configuration.ConfigurationSettings;
 import dev.toma.configuration.client.theme.ConfigTheme;
 import dev.toma.configuration.client.theme.adapter.DisplayAdapter;
 import dev.toma.configuration.client.widget.ConfigEntryWidget;
@@ -13,23 +14,30 @@ import net.minecraft.network.chat.Component;
 import org.apache.logging.log4j.message.FormattedMessage;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ConfigScreen extends AbstractConfigScreen {
 
-    private final Map<String, ConfigValue<?>> valueMap;
+    private final Map<String, ConfigValue<?>> configValueMap;
+    private final Map<String, ConfigValue<?>> valueMap = new LinkedHashMap<>();
 
     public ConfigScreen(ConfigHolder<?> configHolder, Component screenTitle, Map<String, ConfigValue<?>> valueMap, Screen previous) {
         super(screenTitle, previous, configHolder);
-        this.valueMap = valueMap;
+        this.configValueMap = valueMap;
     }
 
     @Override
     protected void init() {
         final int viewportMin = HEADER_HEIGHT;
         final int viewportHeight = this.height - viewportMin - FOOTER_HEIGHT;
+        this.valueMap.clear();
+        ConfigurationSettings settings = ConfigurationSettings.getInstance();
+        for (Map.Entry<String, ConfigValue<?>> entry : this.configValueMap.entrySet()) {
+            ConfigValue<?> value = entry.getValue();
+            if (value.getFieldVisibility().isVisible(settings)) {
+                this.valueMap.put(entry.getKey(), value);
+            }
+        }
         int spacing = 22;
         this.pageSize = (viewportHeight - 20) / spacing;
         this.correctScrollingIndex(this.valueMap.size());
@@ -59,6 +67,7 @@ public class ConfigScreen extends AbstractConfigScreen {
                 Configuration.LOGGER.error(MARKER, new FormattedMessage("Unable to create config field for {}", field.getType().getSimpleName()), e);
             }
         }
+        this.addSettingsButton();
         this.addFooter();
     }
 

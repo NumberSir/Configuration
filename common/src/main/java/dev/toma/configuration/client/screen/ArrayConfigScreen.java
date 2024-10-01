@@ -117,6 +117,7 @@ public class ArrayConfigScreen<V, C extends AbstractArrayValue<V>> extends Abstr
                 removeButton.setForegroundRenderer(new TextureRenderer(REMOVE_ICON, 2, 2, 16, 16));
             }
         }
+        addSettingsButton();
         addFooter();
     }
 

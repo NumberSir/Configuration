@@ -218,6 +218,21 @@ public @interface Configurable {
         @Retention(RetentionPolicy.RUNTIME)
         public @interface Slider {
         }
+
+        /**
+         * Allows you to specify field visibility in GUI. Can be useful for some more advanced options which shouldn't
+         * be accessed by all users, or you can completely hide some options from GUI
+         * @since 3.1
+         */
+        @Target(ElementType.FIELD)
+        @Retention(RetentionPolicy.RUNTIME)
+        public @interface Visibility {
+
+            /**
+             * @return Specified field visibility to be set on the field. {@link FieldVisibility#NORMAL} is used by default.
+             */
+            FieldVisibility value();
+        }
     }
 
     /**

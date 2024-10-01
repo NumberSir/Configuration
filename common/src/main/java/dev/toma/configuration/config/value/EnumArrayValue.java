@@ -9,8 +9,11 @@ import java.lang.reflect.Array;
 
 public class EnumArrayValue<E extends Enum<E>> extends AbstractArrayValue<E> {
 
+    private final String[] additionalComments;
+
     public EnumArrayValue(ValueData<E[]> value) {
         super(value);
+        this.additionalComments = EnumValue.generateEnumComments(this.getElementType());
     }
 
     @Override
@@ -30,6 +33,7 @@ public class EnumArrayValue<E extends Enum<E>> extends AbstractArrayValue<E> {
 
     @Override
     protected void serialize(IConfigFormat format) {
+        format.addComments(this.additionalComments);
         format.writeEnumArray(getId(), get(Mode.SAVED));
     }
 
