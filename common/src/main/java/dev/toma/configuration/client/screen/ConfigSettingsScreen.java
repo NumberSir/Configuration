@@ -8,8 +8,6 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-import java.time.Duration;
-
 public final class ConfigSettingsScreen extends Screen {
 
     private static final Component TITLE = Component.translatable("options.title");
@@ -30,16 +28,8 @@ public final class ConfigSettingsScreen extends Screen {
     protected void init() {
         ConfigurationSettings settings = ConfigurationSettings.getInstance();
         // Advanced mode
-        Checkbox checkbox = this.addRenderableWidget(
-                Checkbox.builder(Component.translatable("text.configuration.options.advanced_mode"), this.font)
-                        .pos(10, 40)
-                        .maxWidth(this.width - 20)
-                        .selected(settings.isAdvancedMode())
-                        .onValueChange((checkbox1, b) -> settings.setAdvancedMode(b))
-                        .tooltip(Tooltip.create(Component.translatable("text.configuration.options.advanced_mode.tooltip")))
-                        .build()
-        );
-        checkbox.setTooltipDelay(Duration.ofMillis(500));
+        Checkbox checkbox = getCheckbox(settings);
+        this.addRenderableWidget(checkbox);
 
         // Back button
         this.addRenderableWidget(
@@ -50,9 +40,27 @@ public final class ConfigSettingsScreen extends Screen {
         );
     }
 
+    private Checkbox getCheckbox(ConfigurationSettings settings) {
+        Checkbox checkbox = new Checkbox(10, 40, this.width - 20, 20, Component.translatable("text.configuration.options.advanced_mode"), settings.isAdvancedMode()) {
+            @Override
+            public void onPress() {
+                super.onPress();
+                settings.setAdvancedMode(selected());
+            }
+        };
+        checkbox.setTooltip(Tooltip.create(Component.translatable("text.configuration.options.advanced_mode.tooltip")));
+        checkbox.setTooltipDelay(500);
+        return checkbox;
+    }
+
     @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float renderDelta) {
+        this.renderBackground(graphics, mouseX, mouseY, renderDelta);
+        super.render(graphics, mouseX, mouseY, renderDelta);
+    }
+
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float renderDelta) {
-        super.renderBackground(graphics, mouseX, mouseY, renderDelta);
+        super.renderBackground(graphics);
         // Header BG
         graphics.fill(0, 0, this.width, 30, 0x99 << 24);
         // Footer BG

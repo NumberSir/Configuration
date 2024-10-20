@@ -2,6 +2,7 @@ package dev.toma.configuration.client.widget;
 
 import dev.toma.configuration.client.theme.ConfigTheme;
 import dev.toma.configuration.client.widget.render.IRenderer;
+import dev.toma.configuration.client.widget.render.SpriteRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarratedElementType;
@@ -13,6 +14,8 @@ public abstract class AbstractThemeWidget extends AbstractWidget {
 
     public static final Component REVERT = Component.translatable("text.configuration.value.revert");
     public static final Component REVERT_DEFAULT = Component.translatable("text.configuration.value.revert_default");
+    public static final SpriteRenderer.SpriteOptions DISABLED = new SpriteRenderer.SpriteOptions(0, 20);
+    public static final SpriteRenderer.SpriteOptions HOVERED = new SpriteRenderer.SpriteOptions(0, 40);
 
     protected final ConfigTheme theme;
 
@@ -26,6 +29,10 @@ public abstract class AbstractThemeWidget extends AbstractWidget {
     public AbstractThemeWidget(int x, int y, int width, int height, Component text, ConfigTheme theme) {
         super(x, y, width, height, text);
         this.theme = theme;
+    }
+
+    public static SpriteRenderer.SpriteOptions getSpriteOptions(AbstractThemeWidget widget) {
+        return widget.active ? widget.isHoveredOrFocused() ? HOVERED : SpriteRenderer.SpriteOptions.DEFAULT : DISABLED;
     }
 
     public void setBackgroundRenderer(IRenderer backgroundRenderer) {
@@ -59,6 +66,14 @@ public abstract class AbstractThemeWidget extends AbstractWidget {
 
     public ConfigTheme getTheme() {
         return theme;
+    }
+
+    public int getRight() {
+        return this.getX() + this.getWidth();
+    }
+
+    public int getBottom() {
+        return this.getY() + this.getHeight();
     }
 
     @FunctionalInterface

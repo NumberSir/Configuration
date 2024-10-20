@@ -7,6 +7,7 @@ import dev.toma.configuration.client.ConfigurationClient;
 import dev.toma.configuration.client.theme.ConfigTheme;
 import dev.toma.configuration.client.widget.ConfigEntryWidget;
 import dev.toma.configuration.client.widget.ThemedButtonWidget;
+import dev.toma.configuration.client.widget.WidgetSprites;
 import dev.toma.configuration.client.widget.render.TextureRenderer;
 import dev.toma.configuration.config.ConfigHolder;
 import dev.toma.configuration.config.io.ConfigIO;
@@ -16,7 +17,6 @@ import dev.toma.configuration.config.value.ObjectValue;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -26,7 +26,6 @@ import net.minecraft.util.Mth;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
-import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 
@@ -34,17 +33,12 @@ public abstract class AbstractConfigScreen extends Screen implements ConfigEntry
 
     public static final int HEADER_HEIGHT = 35;
     public static final int FOOTER_HEIGHT = 30;
-    public static final WidgetSprites BUTTON_SPRITES = new WidgetSprites(
-            ResourceLocation.withDefaultNamespace("widget/button"),
-            ResourceLocation.withDefaultNamespace("widget/button_disabled"),
-            ResourceLocation.withDefaultNamespace("widget/button_highlighted")
-    );
     public static final Marker MARKER = MarkerManager.getMarker("Screen");
     public static final Component LABEL_BACK = Component.translatable("text.configuration.value.back");
     public static final Component LABEL_SAVE_AND_CLOSE = Component.translatable("text.configuration.value.save_and_close");
-    public static final ResourceLocation ICON_REVERT = ResourceLocation.fromNamespaceAndPath(Configuration.MODID, "textures/icons/revert.png");
-    public static final ResourceLocation ICON_REVERT_DEFAULT = ResourceLocation.fromNamespaceAndPath(Configuration.MODID, "textures/icons/revert_default.png");
-    public static final ResourceLocation ICON_APPLY = ResourceLocation.fromNamespaceAndPath(Configuration.MODID, "textures/icons/apply.png");
+    public static final ResourceLocation ICON_REVERT = new ResourceLocation(Configuration.MODID, "textures/icons/revert.png");
+    public static final ResourceLocation ICON_REVERT_DEFAULT = new ResourceLocation(Configuration.MODID, "textures/icons/revert_default.png");
+    public static final ResourceLocation ICON_APPLY = new ResourceLocation(Configuration.MODID, "textures/icons/apply.png");
     protected final ConfigHolder<?> holder;
     protected final ConfigTheme theme;
     protected final Screen last;
@@ -98,7 +92,7 @@ public abstract class AbstractConfigScreen extends Screen implements ConfigEntry
             this.minecraft.setScreen(settingsScreen);
         });
         settings.setTooltip(Tooltip.create(Component.translatable("options.title")));
-        settings.setTooltipDelay(Duration.ofMillis(300));
+        settings.setTooltipDelay(300);
     }
 
     protected void addFooter() {
@@ -118,7 +112,7 @@ public abstract class AbstractConfigScreen extends Screen implements ConfigEntry
             }
         });
         applyButton.setTooltip(Tooltip.create(ConfigEntryWidget.APPLY));
-        applyButton.setTooltipDelay(Duration.ofMillis(300));
+        applyButton.setTooltipDelay(300);
         applyButton.active = holder.isChanged();
 
         revertDefaultButton = addRenderableWidget(new ThemedButtonWidget(width - 50, centerY, 20, 20, CommonComponents.EMPTY, theme));
@@ -126,7 +120,7 @@ public abstract class AbstractConfigScreen extends Screen implements ConfigEntry
         revertDefaultButton.setForegroundRenderer(new TextureRenderer(ICON_REVERT_DEFAULT, 2, 2, 16, 16));
         revertDefaultButton.setClickListener((widget, mouseX, mouseY) -> this.buttonRevertToDefaultClicked());
         revertDefaultButton.setTooltip(Tooltip.create(ConfigEntryWidget.REVERT_DEFAULTS));
-        revertDefaultButton.setTooltipDelay(Duration.ofMillis(300));
+        revertDefaultButton.setTooltipDelay(300);
         revertDefaultButton.active = holder.isChangedFromDefault();
 
         revertButton = addRenderableWidget(new ThemedButtonWidget(width - 75, centerY, 20, 20, CommonComponents.EMPTY, theme));
@@ -134,7 +128,7 @@ public abstract class AbstractConfigScreen extends Screen implements ConfigEntry
         revertButton.setForegroundRenderer(new TextureRenderer(ICON_REVERT, 2, 2, 16, 16));
         revertButton.setClickListener((widget, mouseX, mouseY) -> this.buttonRevertChangesClicked());
         revertButton.setTooltip(Tooltip.create(ConfigEntryWidget.REVERT_CHANGES));
-        revertButton.setTooltipDelay(Duration.ofMillis(300));
+        revertButton.setTooltipDelay(300);
         revertButton.active = holder.isChanged();
     }
 

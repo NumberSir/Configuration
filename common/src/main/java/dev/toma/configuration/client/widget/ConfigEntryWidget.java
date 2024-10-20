@@ -11,7 +11,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -99,7 +98,7 @@ public class ConfigEntryWidget extends ContainerWidget implements WidgetAdder {
                 List<FormattedCharSequence> lines = messages.stream()
                         .flatMap(text -> font.split(text, this.width / 2).stream())
                         .toList();
-                boolean hasDescription = lines.size() > 1 || (lines.size() == 1 && !lines.getFirst().equals(CommonComponents.EMPTY));
+                boolean hasDescription = lines.size() > 1 || (lines.size() == 1 && !lines.get(0).equals(FormattedCharSequence.EMPTY));
                 if (hasDescription) {
                     this.renderer.drawDescription(graphics, this, lines, severity, severity.textColor);
                 }

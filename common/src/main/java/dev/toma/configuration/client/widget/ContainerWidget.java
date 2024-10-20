@@ -70,8 +70,8 @@ public abstract class ContainerWidget extends AbstractWidget implements Containe
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double amountX, double amountY) {
-        return ContainerEventHandler.super.mouseScrolled(mouseX, mouseY, amountX, amountY);
+    public boolean mouseScrolled(double mouseX, double mouseY, double amountY) {
+        return ContainerEventHandler.super.mouseScrolled(mouseX, mouseY, amountY);
     }
 
     @Override
@@ -118,5 +118,13 @@ public abstract class ContainerWidget extends AbstractWidget implements Containe
             focused.setFocused(true);
         }
         this.focused = focused;
+    }
+
+    public int getRight() {
+        return this.getX() + this.getWidth();
+    }
+
+    public int getBottom() {
+        return this.getY() + this.getHeight();
     }
 }

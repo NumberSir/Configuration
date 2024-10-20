@@ -45,6 +45,7 @@ minecraft {
             taskName 'Client'
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            property 'forge.logging.console.level', 'debug'
             mods {
                 modClientRun {
                     source sourceSets.main
@@ -59,6 +60,7 @@ minecraft {
             taskName 'Server'
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            property 'forge.logging.console.level', 'debug'
             mods {
                 modServerRun {
                     source sourceSets.main
@@ -73,10 +75,6 @@ sourceSets.main.resources.srcDir 'src/generated/resources'
 
 dependencies {
     minecraft "net.minecraftforge:forge:${forge_version}"
-
-    // Note: Hack fix for now, force jopt-simple to be exactly 5.0.4 because Mojang ships that version, but some transitive dependencies request 6.0+
-    implementation('net.sf.jopt-simple:jopt-simple:5.0.4') { version { strictly '5.0.4' } }
-
     annotationProcessor("org.spongepowered:mixin:${mixin_version}:processor")
 
     compileOnly project(":common")

@@ -1,13 +1,14 @@
 package dev.toma.configuration.client.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import dev.toma.configuration.Configuration;
 import dev.toma.configuration.client.theme.ConfigTheme;
 import dev.toma.configuration.client.widget.render.IRenderer;
+import dev.toma.configuration.client.widget.render.SpriteRenderer;
 import dev.toma.configuration.config.value.NumericValue;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
@@ -18,14 +19,10 @@ import java.text.DecimalFormat;
 
 public class SliderWidget<N extends Number & Comparable<N>> extends AbstractThemeWidget {
 
-    public static final WidgetSprites SLIDER = new WidgetSprites(
-            ResourceLocation.withDefaultNamespace("widget/slider"),
-            ResourceLocation.withDefaultNamespace("widget/slider_highlighted")
-    );
-    public static final WidgetSprites HANDLE = new WidgetSprites(
-            ResourceLocation.withDefaultNamespace("widget/slider_handle"),
-            ResourceLocation.withDefaultNamespace("widget/slider_handle_highlighted")
-    );
+    public static final SpriteRenderer.SpriteOptions SLIDER_OPT = new SpriteRenderer.SpriteOptions(0, 60);
+    public static final SpriteRenderer.SpriteOptions SLIDER_HOVERED_OPT = new SpriteRenderer.SpriteOptions(0, 80);
+    public static final SpriteRenderer.SpriteOptions HANDLE_OPT = new SpriteRenderer.SpriteOptions(200, 60);
+    public static final SpriteRenderer.SpriteOptions HANDLE_HOVERED_OPT = new SpriteRenderer.SpriteOptions(200, 80);
 
     protected final Font font;
     protected final NumericValue<N> numericValue;
@@ -42,6 +39,14 @@ public class SliderWidget<N extends Number & Comparable<N>> extends AbstractThem
         this.font = font;
 
         this.updateDisplayText();
+    }
+
+    public static SpriteRenderer.SpriteOptions getSpriteOptions(AbstractThemeWidget themeWidget) {
+        return themeWidget.isHoveredOrFocused() ? SLIDER_HOVERED_OPT : SLIDER_OPT;
+    }
+
+    public static SpriteRenderer.SpriteOptions getHandleSpriteOptions(AbstractThemeWidget themeWidget) {
+        return themeWidget.isFocused() ? HANDLE_HOVERED_OPT : HANDLE_OPT;
     }
 
     public void setFormatter(DecimalFormat decimalFormat) {

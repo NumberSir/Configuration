@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 public class ArrayConfigScreen<V, C extends AbstractArrayValue<V>> extends AbstractConfigScreen {
 
     public static final Component ADD_ELEMENT = Component.translatable("text.configuration.value.add_element");
-    public static final ResourceLocation REMOVE_ICON = ResourceLocation.fromNamespaceAndPath(Configuration.MODID, "textures/icons/remove.png");
+    public static final ResourceLocation REMOVE_ICON = new ResourceLocation(Configuration.MODID, "textures/icons/remove.png");
 
     public final C array;
     private final boolean fixedSize;
@@ -130,7 +130,7 @@ public class ArrayConfigScreen<V, C extends AbstractArrayValue<V>> extends Abstr
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics, mouseX, mouseY, partialTicks);
+        renderBackground(graphics);
         ConfigTheme.Header themeHeader = this.theme.getHeader();
         ConfigTheme.Footer footer = this.theme.getFooter();
         Component headerLabel = themeHeader.customText() != null ? themeHeader.customText() : this.title;
@@ -148,7 +148,7 @@ public class ArrayConfigScreen<V, C extends AbstractArrayValue<V>> extends Abstr
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double amountX, double amountY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double amountY) {
         int scale = (int) -amountY;
         int next = this.index + scale;
         if (next >= 0 && next + this.pageSize <= this.getTotalSize()) {

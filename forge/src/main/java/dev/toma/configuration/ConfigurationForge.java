@@ -69,7 +69,7 @@ public class ConfigurationForge {
                 List<ConfigHolder<?>> list = entry.getValue();
                 modContainer.registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () -> new ConfigScreenHandler.ConfigScreenFactory((minecraft, screen) -> {
                     if (list.size() == 1) {
-                        return ConfigurationClient.getConfigScreen(list.getFirst().getConfigId(), screen);
+                        return ConfigurationClient.getConfigScreen(list.get(0).getConfigId(), screen);
                     }
                     return ConfigurationClient.getConfigScreenByGroup(list, modId, screen);
                 }));

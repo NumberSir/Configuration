@@ -1,11 +1,13 @@
 package dev.toma.configuration.client.widget;
 
+import dev.toma.configuration.Configuration;
 import dev.toma.configuration.client.theme.ConfigTheme;
+import dev.toma.configuration.client.widget.render.SpriteRenderer;
+import net.minecraft.SharedConstants;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
@@ -17,7 +19,6 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
-import net.minecraft.util.StringUtil;
 
 import java.text.DecimalFormat;
 import java.util.Objects;
@@ -29,7 +30,8 @@ import java.util.function.Supplier;
 // Shamelessly copied from Vanilla and adjusted as needed
 public class EditBoxWidget extends AbstractThemeWidget {
 
-    public static final WidgetSprites SPRITES = new WidgetSprites(ResourceLocation.withDefaultNamespace("widget/text_field"), ResourceLocation.withDefaultNamespace("widget/text_field_highlighted"));
+    private static final SpriteRenderer.SpriteOptions DEFAULT = new SpriteRenderer.SpriteOptions(0, 100);
+    private static final SpriteRenderer.SpriteOptions HOVERED = new SpriteRenderer.SpriteOptions(0, 120);
     private static final int CURSOR_INSERT_WIDTH = 1;
     private static final int CURSOR_INSERT_COLOR = 0xffd0d0d0;
     private static final String CURSOR_APPEND_CHARACTER = "_";
@@ -62,6 +64,10 @@ public class EditBoxWidget extends AbstractThemeWidget {
         this.focusedTime = Util.getMillis();
     }
 
+    public static SpriteRenderer.SpriteOptions getSpriteOptions(AbstractThemeWidget themeWidget) {
+        return themeWidget.isHoveredOrFocused() ? HOVERED : DEFAULT;
+    }
+
     public void setFormatter(DecimalFormat formatter, Supplier<Number> provider) {
         this.numberFormatter = formatter != null ? new NumberFormatter(formatter, provider) : null;
     }
@@ -74,6 +80,7 @@ public class EditBoxWidget extends AbstractThemeWidget {
         this.formatter = $$0;
     }
 
+    @Override
     protected MutableComponent createNarrationMessage() {
         Component $$0 = this.getMessage();
         return Component.translatable("gui.narrate.editBox", $$0, this.value);
@@ -112,7 +119,7 @@ public class EditBoxWidget extends AbstractThemeWidget {
         int selectMax = Math.max(this.cursorPos, this.highlightPos);
         int maxWidth = this.maxLength - this.value.length() - (selectMin - selectMax);
         if (maxWidth > 0) {
-            String filteredText = StringUtil.filterText(text);
+            String filteredText = SharedConstants.filterText(text);
             int width = filteredText.length();
             if (maxWidth < width) {
                 if (Character.isHighSurrogate(filteredText.charAt(maxWidth - 1))) {
@@ -249,6 +256,7 @@ public class EditBoxWidget extends AbstractThemeWidget {
         this.moveCursorTo(this.value.length(), $$0);
     }
 
+    @Override
     public boolean keyPressed(int $$0, int $$1, int $$2) {
         if (this.isActive() && this.isFocused()) {
             switch ($$0) {
@@ -316,10 +324,11 @@ public class EditBoxWidget extends AbstractThemeWidget {
         return this.isActive() && this.isFocused();
     }
 
+    @Override
     public boolean charTyped(char $$0, int $$1) {
         if (!this.canConsumeInput()) {
             return false;
-        } else if (StringUtil.isAllowedChatCharacter($$0)) {
+        } else if (SharedConstants.isAllowedChatCharacter($$0)) {
             if (this.isActive()) {
                 this.insertText(Character.toString($$0));
             }
@@ -330,6 +339,7 @@ public class EditBoxWidget extends AbstractThemeWidget {
         }
     }
 
+    @Override
     public void onClick(double $$0, double $$1) {
         int $$2 = Mth.floor($$0) - this.getX();
         if (this.bordered) {
@@ -340,9 +350,11 @@ public class EditBoxWidget extends AbstractThemeWidget {
         this.moveCursorTo(this.font.plainSubstrByWidth($$3, $$2).length() + this.displayPos, Screen.hasShiftDown());
     }
 
+    @Override
     public void playDownSound(SoundManager $$0) {
     }
 
+    @Override
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float deltaTick) {
         if (this.isVisible()) {
             if (this.isBordered()) {
@@ -463,6 +475,7 @@ public class EditBoxWidget extends AbstractThemeWidget {
         this.bordered = $$0;
     }
 
+    @Override
     public void setFocused(boolean $$0) {
         if (this.canLoseFocus || $$0) {
             super.setFocused($$0);

@@ -69,7 +69,7 @@ public class ConfigGroupScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics, mouseX, mouseY, partialTicks);
+        renderBackground(graphics);
         int titleWidth = this.font.width(this.title);
         graphics.drawString(font, this.title, (this.width - titleWidth) / 2, (HEADER_HEIGHT - this.font.lineHeight) / 2, 0xFFFFFF);
         graphics.fill(0, 0, width, HEADER_HEIGHT, 0x99 << 24);
@@ -91,7 +91,7 @@ public class ConfigGroupScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double amountX, double amountY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double amountY) {
         int scale = (int) -amountY;
         int next = this.index + scale;
         if (next >= 0 && next + this.pageSize <= this.configHolders.size()) {

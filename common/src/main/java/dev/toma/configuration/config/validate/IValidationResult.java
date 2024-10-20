@@ -69,7 +69,7 @@ public interface IValidationResult {
             this.backgroundColor = backgroundColor;
             this.backgroundFadeMinColor = backgroundFadeMinColor;
             this.backgroundFadeMaxColor = backgroundFadeMaxColor;
-            this.iconPath = ResourceLocation.fromNamespaceAndPath(Configuration.MODID, "textures/icons/" + this.name().toLowerCase(Locale.ROOT) + ".png");
+            this.iconPath = new ResourceLocation(Configuration.MODID, "textures/icons/" + this.name().toLowerCase(Locale.ROOT) + ".png");
         }
 
         public boolean isWarningOrError() {

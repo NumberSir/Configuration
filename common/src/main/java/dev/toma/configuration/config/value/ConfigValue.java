@@ -189,7 +189,7 @@ public abstract class ConfigValue<T> implements IConfigValue<T> {
             }
 
             if (this.updateRestriction == UpdateRestrictions.GAME_RESTART) {
-                this.validators.addFirst((t, wrapper) -> {
+                this.validators.add(0, (t, wrapper) -> {
                     if (ConfigIO.getEnvironment() == ConfigIO.ConfigEnvironment.LOADING)
                         return IValidationResult.success();
                     if (this.isChanged(t, this.activeValue)) {

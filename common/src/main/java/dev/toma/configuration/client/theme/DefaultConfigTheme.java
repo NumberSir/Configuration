@@ -1,14 +1,18 @@
 package dev.toma.configuration.client.theme;
 
-import dev.toma.configuration.client.screen.AbstractConfigScreen;
+import dev.toma.configuration.Configuration;
 import dev.toma.configuration.client.theme.adapter.*;
+import dev.toma.configuration.client.widget.AbstractThemeWidget;
 import dev.toma.configuration.client.widget.EditBoxWidget;
 import dev.toma.configuration.client.widget.SliderWidget;
 import dev.toma.configuration.client.widget.render.SolidColorRenderer;
 import dev.toma.configuration.client.widget.render.SpriteRenderer;
 import dev.toma.configuration.config.adapter.TypeMatcher;
+import net.minecraft.resources.ResourceLocation;
 
 public class DefaultConfigTheme {
+
+    public static final ResourceLocation DEFAULT_ASSETS = new ResourceLocation(Configuration.MODID, "textures/widget/widgets.png");
 
     public static void configure(ConfigTheme theme) {
         theme.setHeader(new ConfigTheme.Header(null, 0x99 << 24, 0xaaaaaa));
@@ -40,10 +44,10 @@ public class DefaultConfigTheme {
         theme.registerDisplayAdapter(TypeMatcher.matchEnumArray(), new EnumArrayDisplayAdapter<>());
         theme.registerDisplayAdapter(TypeMatcher.matchObject(), new ObjectDisplayAdapter());
 
-        theme.setButtonBackground(t -> new SpriteRenderer(() -> AbstractConfigScreen.BUTTON_SPRITES.get(t.isActive(), t.isHoveredOrFocused())));
-        theme.setEditBoxBackground(t -> new SpriteRenderer(() -> EditBoxWidget.SPRITES.get(t.isActive(), t.isHoveredOrFocused())));
-        theme.setSliderBackground(t -> new SpriteRenderer(() -> SliderWidget.SLIDER.get(t.isActive(), t.isHoveredOrFocused())));
-        theme.setSliderHandle(t -> new SpriteRenderer(() -> SliderWidget.HANDLE.get(t.isActive(), t.isFocused())));
+        theme.setButtonBackground(t -> new SpriteRenderer(t, DEFAULT_ASSETS, AbstractThemeWidget::getSpriteOptions, new SpriteRenderer.NineSliceOptions(1, 1, 200, 20)));
+        theme.setEditBoxBackground(t -> new SpriteRenderer(t, DEFAULT_ASSETS, EditBoxWidget::getSpriteOptions, new SpriteRenderer.NineSliceOptions(1, 1, 200, 20)));
+        theme.setSliderBackground(t -> new SpriteRenderer(t, DEFAULT_ASSETS, SliderWidget::getSpriteOptions, new SpriteRenderer.NineSliceOptions(1, 1, 200, 20)));
+        theme.setSliderHandle(t -> new SpriteRenderer(t, DEFAULT_ASSETS, SliderWidget::getHandleSpriteOptions));
         theme.setColorBackground(t -> new SolidColorRenderer(() -> t.isHoveredOrFocused() ? 0xFFFFFFFF : 0xFFA0A0A0));
     }
 }

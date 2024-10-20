@@ -73,7 +73,7 @@ public class ConfigScreen extends AbstractConfigScreen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics, mouseX, mouseY, partialTicks);
+        this.renderBackground(graphics);
         // HEADER
         ConfigTheme.Header themeHeader = this.theme.getHeader();
         ConfigTheme.Footer footer = this.theme.getFooter();
@@ -93,7 +93,7 @@ public class ConfigScreen extends AbstractConfigScreen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double amountX, double amountY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double amountY) {
         int scale = (int) -amountY;
         int next = this.index + scale;
         if (next >= 0 && next + this.pageSize <= this.valueMap.size()) {

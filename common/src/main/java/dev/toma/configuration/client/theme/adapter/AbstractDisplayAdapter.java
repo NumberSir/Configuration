@@ -26,7 +26,7 @@ public abstract class AbstractDisplayAdapter implements DisplayAdapter {
             ThemedButtonWidget widget = new ThemedButtonWidget(left, linkedTo.getY(), 20, linkedTo.getHeight(), CommonComponents.EMPTY, linkedTo.getTheme());
             widget.setClickListener((widget1, mouseX, mouseY) -> reverter.revert(false));
             widget.setTooltip(Tooltip.create(AbstractThemeWidget.REVERT));
-            widget.setTooltipDelay(Duration.ofMillis(200));
+            widget.setTooltipDelay(200);
             widget.setBackgroundRenderer(theme.getButtonBackground(widget));
             widget.setForegroundRenderer(new TextureRenderer(AbstractConfigScreen.ICON_REVERT, 2, 2, 16, 16));
             widget.active = value.isEditable() && value.isChanged();
@@ -40,7 +40,7 @@ public abstract class AbstractDisplayAdapter implements DisplayAdapter {
             ThemedButtonWidget widget = new ThemedButtonWidget(left, linkedTo.getY(), 20, linkedTo.getHeight(), CommonComponents.EMPTY, linkedTo.getTheme());
             widget.setClickListener((widget1, mouseX, mouseY) -> reverter.revert(true));
             widget.setTooltip(Tooltip.create(AbstractThemeWidget.REVERT_DEFAULT));
-            widget.setTooltipDelay(Duration.ofMillis(200));
+            widget.setTooltipDelay(200);
             widget.setBackgroundRenderer(theme.getButtonBackground(widget));
             widget.setForegroundRenderer(new TextureRenderer(AbstractConfigScreen.ICON_REVERT_DEFAULT, 2, 2, 16, 16));
             widget.active = value.isEditable() && value.isChangedFromDefault();

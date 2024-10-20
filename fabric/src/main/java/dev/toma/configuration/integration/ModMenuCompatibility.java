@@ -29,7 +29,7 @@ public class ModMenuCompatibility implements ModMenuApi {
                 if (i > 1) {
                     return ConfigurationClient.getConfigScreenByGroup(configHolders, group, parent);
                 } else if (i == 1) {
-                    return ConfigurationClient.getConfigScreen(configHolders.getFirst().getConfigId(), parent);
+                    return ConfigurationClient.getConfigScreen(configHolders.get(0).getConfigId(), parent);
                 }
                 return null;
             };
