@@ -1,62 +1,66 @@
 package dev.toma.configuration;
 
-import dev.toma.configuration.client.screen.ConfigGroupScreen;
-import dev.toma.configuration.client.screen.ConfigScreen;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import dev.toma.configuration.config.Config;
 import dev.toma.configuration.config.ConfigHolder;
 import dev.toma.configuration.config.format.ConfigFormats;
 import dev.toma.configuration.config.format.IConfigFormatHandler;
 import dev.toma.configuration.config.io.ConfigIO;
-import dev.toma.configuration.config.value.ConfigValue;
-import dev.toma.configuration.network.Networking;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.ConfigScreenHandler;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.ModContainer;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLEnvironment;
+import dev.toma.configuration.service.ServiceHelper;
+import dev.toma.configuration.service.services.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-@Mod(Configuration.MODID)
+/**
+ * Main API entrypoint. Used for config registration
+ *
+ * @since 2.0
+ * @author Toma
+ */
 public final class Configuration {
 
     public static final String MODID = "configuration";
+
+    @ApiStatus.Internal
     public static final Logger LOGGER = LogManager.getLogger("Configuration");
-    public static final Marker MAIN_MARKER = MarkerManager.getMarker("main");
+    @ApiStatus.Internal
+    public static final Platform PLATFORM = ServiceHelper.loadService(Platform.class);
 
-    public Configuration() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        modEventBus.addListener(this::init);
-        modEventBus.addListener(this::clientInit);
-
-        if (isDevelopmentEnvironment()) {
-            registerConfig(TestingConfig.class, ConfigFormats.yaml());
+    @ApiStatus.Internal
+    public static void setup() {
+        if (PLATFORM.isDevelopmentEnvironment()) {
+            registerConfig(TestingConfig.class, ConfigFormats.YAML);
         }
+        ConfigurationSettings.loadSettings();
     }
+
+    /**
+     * Codec for obtaining config holder by config ID. Could be useful for datapack config value reading for example.
+     * @since 3.0
+     */
+    public static final Codec<ConfigHolder<?>> BY_ID_CODEC = Codec.STRING.comapFlatMap(
+            id -> {
+                Optional<ConfigHolder<Object>> optional = getConfig(id);
+                return optional.map(DataResult::success)
+                        .orElseGet(() -> DataResult.error(() -> "Unknown config ID '" + id + "'"));
+            },
+            ConfigHolder::getConfigId
+    );
 
     /**
      * Registers your config class. Config will be immediately loaded upon calling.
      *
      * @param cfgClass Your config class
      * @param formatFactory File format to be used by this config class. You can use values
-     *                      from {@link ConfigFormats} for example.
+     *                      from {@link dev.toma.configuration.config.format.ConfigFormats} for example.
      * @return Config holder containing your config instance. You obtain it by calling
      * {@link ConfigHolder#getConfigInstance()} method.
      * @param <CFG> Config type
+     * @since 2.0
      */
     public static <CFG> ConfigHolder<CFG> registerConfig(Class<CFG> cfgClass, IConfigFormatHandler formatFactory) {
         Config cfg = cfgClass.getAnnotation(Config.class);
@@ -81,84 +85,13 @@ public final class Configuration {
     }
 
     /**
-     * You can obtain default config screen based on provided config class.
-     *
-     * @param configClass Your config class
-     * @param previous Previously open screen
-     * @return Either new config screen or {@code null} when no config exists for the provided class
+     * Allows you to get your config holder based on ID
+     * @param id Config ID
+     * @return Optional with config holder when such object exists
+     * @param <CFG> Config type
+     * @since 2.3.0
      */
-    @Nullable
-    @OnlyIn(Dist.CLIENT)
-    public static Screen getConfigScreen(Class<?> configClass, Screen previous) {
-        Config cfg = configClass.getAnnotation(Config.class);
-        if (cfg == null) {
-            return null;
-        }
-        String id = cfg.id();
-        return getConfigScreen(id, previous);
-    }
-
-    /**
-     * You can obtain default config screen based on provided config ID.
-     *
-     * @param configId ID of your config
-     * @param previous Previously open screen
-     * @return Either new config screen or {@code null} when no config exists with the provided ID
-     */
-    @Nullable
-    @OnlyIn(Dist.CLIENT)
-    public static Screen getConfigScreen(String configId, Screen previous) {
-        return ConfigHolder.getConfig(configId).map(holder -> {
-            Map<String, ConfigValue<?>> valueMap = holder.getValueMap();
-            return new ConfigScreen(configId, holder.getConfigId(), valueMap, previous);
-        }).orElse(null);
-    }
-
-    /**
-     * Obtain group of multiple configs based on group ID. This is useful when you have multiple config files
-     * for your mod.
-     *
-     * @param group Group ID, usually mod ID
-     * @param previous Previously open screen
-     * @return Either new config group screen or null when no config exists under the provided group
-     */
-    @OnlyIn(Dist.CLIENT)
-    public static Screen getConfigScreenByGroup(String group, Screen previous) {
-        List<ConfigHolder<?>> list = ConfigHolder.getConfigsByGroup(group);
-        if (list.isEmpty())
-            return null;
-        return getConfigScreenByGroup(list, group, previous);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private static Screen getConfigScreenByGroup(List<ConfigHolder<?>> group, String groupId, Screen previous) {
-        return new ConfigGroupScreen(previous, groupId, group);
-    }
-
-    private void init(FMLCommonSetupEvent event) {
-        Networking.PacketRegistry.register();
-        ConfigIO.FILE_WATCH_MANAGER.startService();
-    }
-
-    private void clientInit(FMLClientSetupEvent event) {
-        Map<String, List<ConfigHolder<?>>> groups = ConfigHolder.getConfigGroupingByGroup();
-        ModList modList = ModList.get();
-        for (Map.Entry<String, List<ConfigHolder<?>>> entry : groups.entrySet()) {
-            String modId = entry.getKey();
-            Optional<? extends ModContainer> optional = modList.getModContainerById(modId);
-            optional.ifPresent(modContainer -> {
-                List<ConfigHolder<?>> list = entry.getValue();
-                modContainer.registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () -> new ConfigScreenHandler.ConfigScreenFactory((minecraft, screen) -> {
-                    if (list.size() == 1) {
-                        return getConfigScreen(list.get(0).getConfigId(), screen);
-                    }
-                    return getConfigScreenByGroup(list, modId, screen);
-                }));
-            });
-        }
-    }
-
-    private static boolean isDevelopmentEnvironment() {
-        return !FMLEnvironment.production;
+    public static <CFG> Optional<ConfigHolder<CFG>> getConfig(String id) {
+        return ConfigHolder.getConfig(id);
     }
 }

@@ -2,11 +2,12 @@ package dev.toma.configuration.config.adapter;
 
 import dev.toma.configuration.Configuration;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 import java.util.function.Predicate;
 
-public interface TypeMatcher extends Predicate<Class<?>> {
+public interface TypeMatcher extends Predicate<Class<?>>, Comparable<TypeMatcher> {
 
     ResourceLocation getIdentifier();
 
@@ -18,6 +19,14 @@ public interface TypeMatcher extends Predicate<Class<?>> {
 
     static TypeMatcher matchCharacter() {
         return NamedMatcherImpl.vanilla("character", Character.TYPE);
+    }
+
+    static TypeMatcher matchByte() {
+        return NamedMatcherImpl.vanilla("byte", Byte.TYPE);
+    }
+
+    static TypeMatcher matchShort() {
+        return NamedMatcherImpl.vanilla("short", Short.TYPE);
     }
 
     static TypeMatcher matchInteger() {
@@ -42,6 +51,18 @@ public interface TypeMatcher extends Predicate<Class<?>> {
 
     static TypeMatcher matchBooleanArray() {
         return NamedMatcherImpl.vanilla("array/boolean", boolean[].class);
+    }
+
+    static TypeMatcher matchCharacterArray() {
+        return NamedMatcherImpl.vanilla("array/character", char[].class);
+    }
+
+    static TypeMatcher matchByteArray() {
+        return NamedMatcherImpl.vanilla("array/byte", byte[].class);
+    }
+
+    static TypeMatcher matchShortArray() {
+        return NamedMatcherImpl.vanilla("array/short", short[].class);
     }
 
     static TypeMatcher matchIntegerArray() {
@@ -114,6 +135,11 @@ public interface TypeMatcher extends Predicate<Class<?>> {
         @Override
         public int priority() {
             return priority;
+        }
+
+        @Override
+        public int compareTo(@NotNull TypeMatcher o) {
+            return this.priority() - o.priority();
         }
 
         @Override

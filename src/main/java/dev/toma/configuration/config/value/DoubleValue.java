@@ -1,55 +1,59 @@
 package dev.toma.configuration.config.value;
 
-import dev.toma.configuration.config.ConfigUtils;
+import dev.toma.configuration.config.Configurable;
 import dev.toma.configuration.config.adapter.TypeAdapter;
 import dev.toma.configuration.config.exception.ConfigValueMissingException;
 import dev.toma.configuration.config.format.IConfigFormat;
+import dev.toma.configuration.config.validate.NumberRange;
 import net.minecraft.network.FriendlyByteBuf;
 
 import java.lang.reflect.Field;
 
-public class DoubleValue extends DecimalValue<Double> {
+public class DoubleValue extends NumericValue<Double> {
 
     public DoubleValue(ValueData<Double> valueData) {
-        super(valueData, Range.unboundedDouble());
+        super(valueData, -Double.MAX_VALUE, Double.MAX_VALUE);
     }
 
     @Override
-    public Double getCorrectedValue(Double in) {
-        if (this.range == null)
-            return in;
-        if (!this.range.isWithin(in)) {
-            double corrected = this.range.clamp(in);
-            ConfigUtils.logCorrectedMessage(this.getId(), in, corrected);
-            return corrected;
-        }
-        return in;
+    protected NumberRange<Double> getValueRange(Field field, Double min, Double max) {
+        Configurable.DecimalRange range = field.getAnnotation(Configurable.DecimalRange.class);
+        return range != null
+                ? NumberRange.interval(this, range.min(), range.max())
+                : NumberRange.all(this);
+    }
+
+    @Override
+    public Double getValueFromSlider(double sliderValue) {
+        NumberRange<Double> range = this.getRange();
+        double delta = range.max() - range.min();
+        return range.min() + delta * sliderValue;
     }
 
     @Override
     protected void serialize(IConfigFormat format) {
-        format.writeDouble(this.getId(), this.get());
+        format.writeDouble(this.getId(), this.get(Mode.SAVED));
     }
 
     @Override
     protected void deserialize(IConfigFormat format) throws ConfigValueMissingException {
-        this.set(format.readDouble(this.getId()));
+        this.setValue(format.readDouble(this.getId()));
     }
 
-    public static final class Adapter extends TypeAdapter {
+    public static final class Adapter extends TypeAdapter<Double> {
 
         @Override
-        public ConfigValue<?> serialize(String name, String[] comments, Object value, TypeSerializer serializer, AdapterContext context) throws IllegalAccessException {
-            return new DoubleValue(ValueData.of(name, (double) value, context, comments));
+        public ConfigValue<Double> serialize(TypeAttributes<Double> attributes, Object instance, TypeSerializer serializer) throws IllegalAccessException {
+            return new DoubleValue(ValueData.of(attributes));
         }
 
         @Override
-        public void encodeToBuffer(ConfigValue<?> value, FriendlyByteBuf buffer) {
-            buffer.writeDouble((Double) value.get());
+        public void encodeToBuffer(ConfigValue<Double> value, FriendlyByteBuf buffer) {
+            buffer.writeDouble(value.get());
         }
 
         @Override
-        public Object decodeFromBuffer(ConfigValue<?> value, FriendlyByteBuf buffer) {
+        public Double decodeFromBuffer(ConfigValue<Double> value, FriendlyByteBuf buffer) {
             return buffer.readDouble();
         }
 

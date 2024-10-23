@@ -5,7 +5,6 @@ import dev.toma.configuration.config.ConfigHolder;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
@@ -20,7 +19,6 @@ public final class FileWatchManager {
     public static final Marker MARKER = MarkerManager.getMarker("FileWatching");
     private final Map<String, ConfigHolder<?>> configPaths = new HashMap<>();
     private final List<WatchKey> watchKeys = new ArrayList<>();
-    @Nullable
     private final WatchService service;
     private final ScheduledExecutorService executorService;
     private final Set<String> processCache = new HashSet<>();
@@ -36,6 +34,7 @@ public final class FileWatchManager {
             this.executorService = Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread t = new Thread(r);
                 t.setName("Auto-Sync thread");
+                t.setDaemon(true);
                 return t;
             });
         }
@@ -49,7 +48,12 @@ public final class FileWatchManager {
         }
         Path configDir = Paths.get("./config");
         try {
-            Files.walkFileTree(configDir, new SimpleFileVisitor<Path>() {
+            File configDirFile = configDir.toFile();
+            if (!configDirFile.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                configDirFile.mkdir();
+            }
+            Files.walkFileTree(configDir, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                     WatchKey key = dir.register(FileWatchManager.this.service, StandardWatchEventKinds.ENTRY_MODIFY);
@@ -69,7 +73,6 @@ public final class FileWatchManager {
                         ConfigHolder<?> holder = this.configPaths.get(strPath);
                         if (holder != null) {
                             ConfigIO.reloadClientValues(holder);
-                            holder.dispatchFileRefreshEvent();
                             this.processCache.add(strPath);
                         }
                     });
@@ -77,6 +80,15 @@ public final class FileWatchManager {
             }, 0L, 1000L, TimeUnit.MILLISECONDS);
         } catch (IOException e) {
             Configuration.LOGGER.error(MARKER, "Unable to create watch key for config directory, disabling auto-sync function", e);
+        }
+    }
+
+    public void stop() {
+        try {
+            executorService.shutdown();
+            service.close();
+        } catch (IOException e) {
+            throw new IllegalStateException("Error while stopping FileWatch service", e);
         }
     }
 

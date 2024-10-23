@@ -14,18 +14,30 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Optional;
 
 @Mixin(Minecraft.class)
-public abstract class MinecraftMixin extends ReentrantBlockableEventLoop<Runnable> implements WindowEventHandler, net.minecraftforge.client.extensions.IForgeMinecraft {
+public abstract class MinecraftMixin extends ReentrantBlockableEventLoop<Runnable> implements WindowEventHandler {
 
-    public MinecraftMixin(String p_i50401_1_) {
-        super(p_i50401_1_);
+    public MinecraftMixin(String name) {
+        super(name);
     }
 
-    @Inject(method = "clearLevel(Lnet/minecraft/client/gui/screens/Screen;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;resetData()V"))
-    private void configuration_reloadClientConfigs(Screen screen, CallbackInfo ci) {
+    @Inject(
+            method = "clearLevel(Lnet/minecraft/client/gui/screens/Screen;)V",
+            at = @At("RETURN")
+    )
+    private void configuration$reloadClientConfigs(Screen screen, CallbackInfo ci) {
+        ConfigIO.setEnvironment(ConfigIO.ConfigEnvironment.MENU);
         ConfigHolder.getSynchronizedConfigs().stream()
                 .map(ConfigHolder::getConfig)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .forEach(ConfigIO::reloadClientValues);
+                .forEach(ConfigHolder::restoreClientStoredValues);
+    }
+
+    @Inject(
+            method = "onGameLoadFinished",
+            at = @At("RETURN")
+    )
+    private void configuration$onGameLoadFinished(CallbackInfo ci) {
+        ConfigIO.setEnvironment(ConfigIO.ConfigEnvironment.MENU);
     }
 }

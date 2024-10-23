@@ -1,8 +1,9 @@
 package dev.toma.configuration.mixin;
 
+import dev.toma.configuration.Configuration;
 import dev.toma.configuration.config.ConfigHolder;
-import dev.toma.configuration.network.Networking;
-import dev.toma.configuration.network.S2C_SendConfigData;
+import dev.toma.configuration.network.NetworkManager;
+import dev.toma.configuration.network.message.S2C_SendConfigDataMessage;
 import net.minecraft.network.Connection;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
@@ -16,9 +17,13 @@ import java.util.Set;
 @Mixin(PlayerList.class)
 public abstract class PlayerListMixin {
 
-    @Inject(method = "placeNewPlayer", at = @At("TAIL"))
-    private void configuration_sendServerConfigs(Connection connection, ServerPlayer player, CallbackInfo ci) {
-        Set<String> set = ConfigHolder.getSynchronizedConfigs();
-        set.forEach(id -> Networking.sendClientPacket(player, new S2C_SendConfigData(id)));
+    @Inject(
+            method = "placeNewPlayer",
+            at = @At("TAIL")
+    )
+    private void configuration$sendServerConfigs(Connection connection, ServerPlayer player, CallbackInfo ci) {
+        Set<String> networkConfigs = ConfigHolder.getSynchronizedConfigs();
+        NetworkManager manager = Configuration.PLATFORM.getNetworkManager();
+        networkConfigs.forEach(cfg -> manager.dispatchClientMessage(player, new S2C_SendConfigDataMessage(cfg)));
     }
 }

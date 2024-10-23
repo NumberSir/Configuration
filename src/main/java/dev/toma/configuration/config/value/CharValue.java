@@ -7,7 +7,7 @@ import net.minecraft.network.FriendlyByteBuf;
 
 import java.lang.reflect.Field;
 
-public final class CharValue extends ConfigValue<Character> {
+public class CharValue extends ConfigValue<Character> {
 
     public CharValue(ValueData<Character> valueData) {
         super(valueData);
@@ -15,28 +15,28 @@ public final class CharValue extends ConfigValue<Character> {
 
     @Override
     protected void serialize(IConfigFormat format) {
-        format.writeChar(this.getId(), this.get());
+        format.writeChar(this.getId(), this.get(Mode.SAVED));
     }
 
     @Override
     protected void deserialize(IConfigFormat format) throws ConfigValueMissingException {
-        this.set(format.readChar(this.getId()));
+        this.setValue(format.readChar(this.getId()));
     }
 
-    public static final class Adapter extends TypeAdapter {
+    public static final class Adapter extends TypeAdapter<Character> {
 
         @Override
-        public ConfigValue<?> serialize(String name, String[] comments, Object value, TypeSerializer serializer, AdapterContext context) throws IllegalAccessException {
-            return new CharValue(ValueData.of(name, (char) value, context, comments));
+        public ConfigValue<Character> serialize(TypeAttributes<Character> attributes, Object instance, TypeSerializer serializer) throws IllegalAccessException {
+            return new CharValue(ValueData.of(attributes));
         }
 
         @Override
-        public void encodeToBuffer(ConfigValue<?> value, FriendlyByteBuf buffer) {
-            buffer.writeChar((Integer) value.get());
+        public void encodeToBuffer(ConfigValue<Character> value, FriendlyByteBuf buffer) {
+            buffer.writeChar(value.get());
         }
 
         @Override
-        public Object decodeFromBuffer(ConfigValue<?> value, FriendlyByteBuf buffer) {
+        public Character decodeFromBuffer(ConfigValue<Character> value, FriendlyByteBuf buffer) {
             return buffer.readChar();
         }
 

@@ -1,47 +1,66 @@
 package dev.toma.configuration.client.screen;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.PoseStack;
 import dev.toma.configuration.Configuration;
-import dev.toma.configuration.client.IValidationHandler;
+import dev.toma.configuration.ConfigurationSettings;
+import dev.toma.configuration.client.ConfigurationClient;
+import dev.toma.configuration.client.theme.ConfigTheme;
 import dev.toma.configuration.client.widget.ConfigEntryWidget;
+import dev.toma.configuration.client.widget.ThemedButtonWidget;
+import dev.toma.configuration.client.widget.WidgetSprites;
+import dev.toma.configuration.client.widget.render.TextureRenderer;
 import dev.toma.configuration.config.ConfigHolder;
 import dev.toma.configuration.config.io.ConfigIO;
-import dev.toma.configuration.config.validate.NotificationSeverity;
+import dev.toma.configuration.config.validate.IValidationResult;
 import dev.toma.configuration.config.value.ConfigValue;
 import dev.toma.configuration.config.value.ObjectValue;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.joml.Matrix4f;
 
 import java.util.Collection;
 import java.util.List;
 
-public abstract class AbstractConfigScreen extends Screen {
+public abstract class AbstractConfigScreen extends Screen implements ConfigEntryWidget.IValidationRenderer {
 
     public static final int HEADER_HEIGHT = 35;
     public static final int FOOTER_HEIGHT = 30;
     public static final Marker MARKER = MarkerManager.getMarker("Screen");
+    public static final Component LABEL_BACK = Component.translatable("text.configuration.value.back");
+    public static final Component LABEL_SAVE_AND_CLOSE = Component.translatable("text.configuration.value.save_and_close");
+    public static final ResourceLocation ICON_REVERT = new ResourceLocation(Configuration.MODID, "textures/icons/revert.png");
+    public static final ResourceLocation ICON_REVERT_DEFAULT = new ResourceLocation(Configuration.MODID, "textures/icons/revert_default.png");
+    public static final ResourceLocation ICON_APPLY = new ResourceLocation(Configuration.MODID, "textures/icons/apply.png");
+    protected final ConfigHolder<?> holder;
+    protected final ConfigTheme theme;
     protected final Screen last;
-    protected final String configId;
 
     protected int index;
     protected int pageSize;
 
-    public AbstractConfigScreen(Component title, Screen previous, String configId) {
+    private ThemedButtonWidget applyButton;
+    private ThemedButtonWidget revertButton;
+    private ThemedButtonWidget revertDefaultButton;
+
+    public AbstractConfigScreen(Component title, Screen previous, ConfigHolder<?> configHolder) {
         super(title);
+        this.holder = configHolder;
+        this.theme = ConfigurationClient.getConfigTheme(configHolder);
         this.last = previous;
-        this.configId = configId;
+
+        ConfigurationSettings.loadSettings(); // Force load settings to memory
+    }
+
+    public String getConfigId() {
+        return this.holder.getConfigId();
     }
 
     @Override
@@ -50,7 +69,7 @@ public abstract class AbstractConfigScreen extends Screen {
         this.saveConfig(true);
     }
 
-    public static void renderScrollbar(GuiGraphics graphics, int x, int y, int width, int height, int index, int valueCount, int paging) {
+    public static void renderScrollbar(GuiGraphics graphics, int x, int y, int width, int height, int index, int valueCount, int paging, int bgColor) {
         if (valueCount <= paging)
             return;
         double step = height / (double) valueCount;
@@ -58,18 +77,69 @@ public abstract class AbstractConfigScreen extends Screen {
         int max = Mth.ceil((index + paging) * step);
         int y1 = y + min;
         int y2 = y + max;
-        graphics.fill(x, y, x + width, y + height, 0xFF << 24);
+        graphics.fill(x, y, x + width, y + height, bgColor);
 
         graphics.fill(x, y1, x + width, y2, 0xFF888888);
         graphics.fill(x, y1, x + width - 1, y2 - 1, 0xFFEEEEEE);
         graphics.fill(x + 1, y1 + 1, x + width - 1, y2 - 1, 0xFFCCCCCC);
     }
 
+    protected void addSettingsButton() {
+        ThemedButtonWidget settings = addRenderableWidget(new ThemedButtonWidget(width - 25, 5, 20, 20, Component.literal("..."), theme));
+        settings.setBackgroundRenderer(theme.getButtonBackground(settings));
+        settings.setClickListener((widget, mouseX, mouseY) -> {
+            ConfigSettingsScreen settingsScreen = new ConfigSettingsScreen(this);
+            this.minecraft.setScreen(settingsScreen);
+        });
+        settings.setTooltip(Tooltip.create(Component.translatable("options.title")));
+        settings.setTooltipDelay(300);
+    }
+
     protected void addFooter() {
         int centerY = this.height - FOOTER_HEIGHT + (FOOTER_HEIGHT - 20) / 2;
-        addRenderableWidget(Button.builder(ConfigEntryWidget.BACK, this::buttonBackClicked).pos(20, centerY).size(50, 20).build());
-        addRenderableWidget(Button.builder(ConfigEntryWidget.REVERT_DEFAULTS, this::buttonRevertToDefaultClicked).pos(75, centerY).size(120, 20).build());
-        addRenderableWidget(Button.builder(ConfigEntryWidget.REVERT_CHANGES, this::buttonRevertChangesClicked).pos(200, centerY).size(120, 20).build());
+        Component backLabel = this.isRoot() ? LABEL_SAVE_AND_CLOSE : LABEL_BACK;
+        ThemedButtonWidget backButton = addRenderableWidget(new ThemedButtonWidget(5, centerY, 120, 20, backLabel, theme));
+        backButton.setBackgroundRenderer(theme.getButtonBackground(backButton));
+        backButton.setClickListener((widget, mouseX, mouseY) -> this.buttonBackClicked());
+
+        applyButton = addRenderableWidget(new ThemedButtonWidget(width - 25, centerY, 20, 20, CommonComponents.EMPTY, theme));
+        applyButton.setBackgroundRenderer(theme.getButtonBackground(applyButton));
+        applyButton.setForegroundRenderer(new TextureRenderer(ICON_APPLY, 2, 2, 16, 16));
+        applyButton.setClickListener((widget, mouseX, mouseY) -> {
+            if (this.holder.isChanged()) {
+                this.holder.save();
+                this.init(minecraft, width, height);
+            }
+        });
+        applyButton.setTooltip(Tooltip.create(ConfigEntryWidget.APPLY));
+        applyButton.setTooltipDelay(300);
+        applyButton.active = holder.isChanged();
+
+        revertDefaultButton = addRenderableWidget(new ThemedButtonWidget(width - 50, centerY, 20, 20, CommonComponents.EMPTY, theme));
+        revertDefaultButton.setBackgroundRenderer(theme.getButtonBackground(revertDefaultButton));
+        revertDefaultButton.setForegroundRenderer(new TextureRenderer(ICON_REVERT_DEFAULT, 2, 2, 16, 16));
+        revertDefaultButton.setClickListener((widget, mouseX, mouseY) -> this.buttonRevertToDefaultClicked());
+        revertDefaultButton.setTooltip(Tooltip.create(ConfigEntryWidget.REVERT_DEFAULTS));
+        revertDefaultButton.setTooltipDelay(300);
+        revertDefaultButton.active = holder.isChangedFromDefault();
+
+        revertButton = addRenderableWidget(new ThemedButtonWidget(width - 75, centerY, 20, 20, CommonComponents.EMPTY, theme));
+        revertButton.setBackgroundRenderer(theme.getButtonBackground(revertButton));
+        revertButton.setForegroundRenderer(new TextureRenderer(ICON_REVERT, 2, 2, 16, 16));
+        revertButton.setClickListener((widget, mouseX, mouseY) -> this.buttonRevertChangesClicked());
+        revertButton.setTooltip(Tooltip.create(ConfigEntryWidget.REVERT_CHANGES));
+        revertButton.setTooltipDelay(300);
+        revertButton.active = holder.isChanged();
+    }
+
+    @Override
+    public void tick() {
+        if (applyButton != null)
+            applyButton.active = holder.isChanged();
+        if (revertDefaultButton != null)
+            revertDefaultButton.active = holder.isChangedFromDefault();
+        if (revertButton != null)
+            revertButton.active = holder.isChanged();
     }
 
     protected void correctScrollingIndex(int count) {
@@ -78,37 +148,31 @@ public abstract class AbstractConfigScreen extends Screen {
         }
     }
 
-    protected Screen getFirstNonConfigScreen() {
-        Screen screen = last;
-        while (screen instanceof ConfigScreen configScreen) {
-            screen = configScreen.last;
-        }
-        return screen;
+    protected boolean isRoot() {
+        return !(last instanceof AbstractConfigScreen);
     }
 
-    private void buttonBackClicked(Button button) {
+    private void buttonBackClicked() {
         this.minecraft.setScreen(this.last);
         this.saveConfig();
     }
 
-    private void buttonRevertToDefaultClicked(Button button) {
+    private void buttonRevertToDefaultClicked() {
         DialogScreen dialog = new DialogScreen(ConfigEntryWidget.REVERT_DEFAULTS, new Component[] {ConfigEntryWidget.REVERT_DEFAULTS_DIALOG_TEXT}, this);
         dialog.onConfirmed(screen -> {
-            Configuration.LOGGER.info(MARKER, "Reverting config {} to default values", this.configId);
-            ConfigHolder.getConfig(this.configId).ifPresent(holder -> {
-                revertToDefault(holder.values());
-                ConfigIO.saveClientValues(holder);
-            });
-            this.backToConfigList();
+            Configuration.LOGGER.info(MARKER, "Reverting config {} to default values", this.getConfigId());
+            this.revertToDefault(this.holder.values());
+            ConfigIO.saveClientValues(this.holder);
+            dialog.displayPreviousScreen();
         });
         minecraft.setScreen(dialog);
     }
 
-    private void buttonRevertChangesClicked(Button button) {
+    private void buttonRevertChangesClicked() {
         DialogScreen dialog = new DialogScreen(ConfigEntryWidget.REVERT_CHANGES, new Component[] {ConfigEntryWidget.REVERT_CHANGES_DIALOG_TEXT}, this);
         dialog.onConfirmed(screen -> {
-            ConfigHolder.getConfig(this.configId).ifPresent(ConfigIO::reloadClientValues);
-            this.backToConfigList();
+            ConfigIO.reloadClientValues(this.holder);
+            dialog.displayPreviousScreen();
         });
         minecraft.setScreen(dialog);
     }
@@ -117,15 +181,10 @@ public abstract class AbstractConfigScreen extends Screen {
         configValues.forEach(val -> {
             if (val instanceof ObjectValue objVal) {
                 this.revertToDefault(objVal.get().values());
-            } else {
-                val.useDefaultValue();
+            } else if (val.isChangedFromDefault()) {
+                val.forceSetDefaultValue();
             }
         });
-    }
-
-    private void backToConfigList() {
-        this.minecraft.setScreen(this.getFirstNonConfigScreen());
-        this.saveConfig();
     }
 
     private void saveConfig() {
@@ -133,25 +192,35 @@ public abstract class AbstractConfigScreen extends Screen {
     }
 
     private void saveConfig(boolean force) {
-        if (force || !(last instanceof AbstractConfigScreen)) {
-            ConfigHolder.getConfig(this.configId).ifPresent(ConfigIO::saveClientValues);
+        if (force || this.isRoot()) {
+            ConfigIO.saveClientValues(this.holder);
         }
     }
 
-    public void renderNotification(NotificationSeverity severity, GuiGraphics graphics, List<FormattedCharSequence> texts, int mouseX, int mouseY) {
+    @Override
+    public void drawDescription(GuiGraphics graphics, AbstractWidget widget, List<FormattedCharSequence> text, IValidationResult.Severity severity, int textColor) {
+        this.renderValidationText(severity, graphics, text, widget.getX() + 5, widget.getY() + widget.getHeight() + 10, textColor);
+    }
+
+    @Override
+    public void drawIcon(GuiGraphics graphics, AbstractWidget widget, IValidationResult.Severity severity) {
+        this.renderValidationIcon(severity, graphics, widget, widget.getX() - 22, widget.getY() + 1);
+    }
+
+    public void renderValidationIcon(IValidationResult.Severity severity, GuiGraphics graphics, AbstractWidget widget, int x, int y) {
+        ResourceLocation icon = severity.iconPath;
+        graphics.blit(icon, x, y, 0, 0.0F, 0.0F, 16, 16, 16, 16);
+    }
+
+    public void renderValidationText(IValidationResult.Severity severity, GuiGraphics graphics, List<FormattedCharSequence> texts, int mouseX, int mouseY, int textColor) {
         if (!texts.isEmpty()) {
             int maxTextWidth = 0;
-            int iconOffset = 13;
             for(FormattedCharSequence textComponent : texts) {
                 int textWidth = this.font.width(textComponent);
-                if (!severity.isOkStatus()) {
-                    textWidth += iconOffset;
-                }
                 if (textWidth > maxTextWidth) {
                     maxTextWidth = textWidth;
                 }
             }
-
             int startX = mouseX + 12;
             int startY = mouseY - 12;
             int heightOffset = 8;
@@ -162,22 +231,16 @@ public abstract class AbstractConfigScreen extends Screen {
             if (startX + maxTextWidth > this.width) {
                 startX -= 28 + maxTextWidth;
             }
-
             if (startY + heightOffset + 6 > this.height) {
                 startY = this.height - heightOffset - 6;
             }
 
             PoseStack stack = graphics.pose();
             stack.pushPose();
-            int background = severity.background;
-            int fadeMin = severity.fadeMin;
-            int fadeMax = severity.fadeMax;
+            int background = severity.backgroundColor;
+            int fadeMin = severity.backgroundFadeMinColor;
+            int fadeMax = severity.backgroundFadeMaxColor;
             int zIndex = 400;
-            Tesselator tessellator = Tesselator.getInstance();
-            RenderSystem.setShader(GameRenderer::getPositionColorShader);
-            BufferBuilder bufferbuilder = tessellator.getBuilder();
-            bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-            Matrix4f matrix4f = stack.last().pose();
             graphics.fillGradient(startX - 3, startY - 4, startX + maxTextWidth + 3, startY - 3, zIndex, background, background);
             graphics.fillGradient(startX - 3, startY + heightOffset + 3, startX + maxTextWidth + 3, startY + heightOffset + 4, zIndex, background, background);
             graphics.fillGradient(startX - 3, startY - 3, startX + maxTextWidth + 3, startY + heightOffset + 3, zIndex, background, background);
@@ -187,51 +250,18 @@ public abstract class AbstractConfigScreen extends Screen {
             graphics.fillGradient(startX + maxTextWidth + 2, startY - 3 + 1, startX + maxTextWidth + 3, startY + heightOffset + 3 - 1, zIndex, fadeMin, fadeMax);
             graphics.fillGradient(startX - 3, startY - 3, startX + maxTextWidth + 3, startY - 3 + 1, zIndex, fadeMin, fadeMin);
             graphics.fillGradient(startX - 3, startY + heightOffset + 2, startX + maxTextWidth + 3, startY + heightOffset + 3, zIndex, fadeMax, fadeMax);
-            RenderSystem.enableDepthTest();
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-            BufferUploader.drawWithShader(bufferbuilder.end());
 
-            if (!severity.isOkStatus()) {
-                ResourceLocation icon = severity.getIcon();
-                RenderSystem.setShader(GameRenderer::getPositionTexShader);
-                RenderSystem.setShaderTexture(0, icon);
-                bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-                float min = -0.5f;
-                float max = 8.5f;
-                bufferbuilder.vertex(matrix4f, startX + min, startY + min, zIndex).uv(0.0F, 0.0F).endVertex();
-                bufferbuilder.vertex(matrix4f, startX + min, startY + max, zIndex).uv(0.0F, 1.0F).endVertex();
-                bufferbuilder.vertex(matrix4f, startX + max, startY + max, zIndex).uv(1.0F, 1.0F).endVertex();
-                bufferbuilder.vertex(matrix4f, startX + max, startY + min, zIndex).uv(1.0F, 0.0F).endVertex();
-                BufferUploader.drawWithShader(bufferbuilder.end());
-            }
-
-
-            RenderSystem.disableBlend();
-            MultiBufferSource.BufferSource bufferSource = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
+            // Draw descriptions in batch, should refactor this too?
             stack.translate(0.0D, 0.0D, zIndex);
-
-            int textOffset = severity.isOkStatus() ? 0 : iconOffset;
             for(int i = 0; i < texts.size(); i++) {
                 FormattedCharSequence textComponent = texts.get(i);
-                if (textComponent != null) {
-                    this.font.drawInBatch(textComponent, (float)startX + textOffset, (float)startY, -1, true, matrix4f, bufferSource, Font.DisplayMode.NORMAL, 0, 0xf000f0);
-                }
-
+                graphics.drawString(font, textComponent, startX, startY, textColor, false);
                 if (i == 0) {
                     startY += 2;
                 }
-
                 startY += 10;
             }
-
-            bufferSource.endBatch();
             stack.popPose();
         }
-    }
-
-    protected <T> void initializeGuiValue(ConfigValue<T> value, IValidationHandler handler) {
-        T t = value.get();
-        value.setWithValidationHandler(t, handler);
     }
 }

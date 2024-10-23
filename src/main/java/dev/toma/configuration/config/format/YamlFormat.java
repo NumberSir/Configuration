@@ -4,7 +4,6 @@ import dev.toma.configuration.config.ConfigUtils;
 import dev.toma.configuration.config.exception.ConfigReadException;
 import dev.toma.configuration.config.exception.ConfigValueMissingException;
 import dev.toma.configuration.config.value.ConfigValue;
-import dev.toma.configuration.config.value.IDescriptionProvider;
 
 import java.io.*;
 import java.lang.reflect.Array;
@@ -62,6 +61,26 @@ public class YamlFormat implements IConfigFormat {
     }
 
     @Override
+    public void writeByte(String field, byte value) {
+        writeValuePair(field, String.valueOf(value));
+    }
+
+    @Override
+    public byte readByte(String field) throws ConfigValueMissingException {
+        return getValue(field, Byte::parseByte);
+    }
+
+    @Override
+    public void writeShort(String field, short value) {
+        writeValuePair(field, String.valueOf(value));
+    }
+
+    @Override
+    public short readShort(String field) throws ConfigValueMissingException {
+        return getValue(field, Short::parseShort);
+    }
+
+    @Override
     public void writeInt(String field, int value) {
         writeValuePair(field, String.valueOf(value));
     }
@@ -112,18 +131,18 @@ public class YamlFormat implements IConfigFormat {
     }
 
     @Override
-    public void writeBoolArray(String field, boolean[] values) {
+    public void writeBoolArray(String field, Boolean[] values) {
         writeKey(field);
-        for (boolean value : values) {
+        for (Boolean value : values) {
             writeArrayEntry(String.valueOf(value));
         }
         newLine();
     }
 
     @Override
-    public boolean[] readBoolArray(String field) throws ConfigValueMissingException {
+    public Boolean[] readBoolArray(String field) throws ConfigValueMissingException {
         String[] arr = this.getValueArray(field);
-        boolean[] res = new boolean[arr.length];
+        Boolean[] res = new Boolean[arr.length];
         for (int i = 0; i < arr.length; i++) {
             res[i] = Boolean.parseBoolean(arr[i]);
         }
@@ -131,18 +150,75 @@ public class YamlFormat implements IConfigFormat {
     }
 
     @Override
-    public void writeIntArray(String field, int[] values) {
+    public void writeCharArray(String field, Character[] values) {
         writeKey(field);
-        for (int value : values) {
+        for (Character value : values) {
             writeArrayEntry(String.valueOf(value));
         }
         newLine();
     }
 
     @Override
-    public int[] readIntArray(String field) throws ConfigValueMissingException {
+    public Character[] readCharArray(String field) throws ConfigValueMissingException {
         String[] arr = this.getValueArray(field);
-        int[] res = new int[arr.length];
+        Character[] res = new Character[arr.length];
+        for (int i = 0; i < arr.length; i++) {
+            res[i] = arr[i].charAt(0);
+        }
+        return res;
+    }
+
+    @Override
+    public void writeByteArray(String field, Byte[] values) {
+        writeKey(field);
+        for (Byte value : values) {
+            writeArrayEntry(String.valueOf(value));
+        }
+        newLine();
+    }
+
+    @Override
+    public Byte[] readByteArray(String field) throws ConfigValueMissingException {
+        String[] arr = this.getValueArray(field);
+        Byte[] res = new Byte[arr.length];
+        for (int i = 0; i < arr.length; i++) {
+            res[i] = Byte.parseByte(arr[i]);
+        }
+        return res;
+    }
+
+    @Override
+    public void writeShortArray(String field, Short[] values) {
+        writeKey(field);
+        for (Short value : values) {
+            writeArrayEntry(String.valueOf(value));
+        }
+        newLine();
+    }
+
+    @Override
+    public Short[] readShortArray(String field) throws ConfigValueMissingException {
+        String[] arr = this.getValueArray(field);
+        Short[] res = new Short[arr.length];
+        for (int i = 0; i < arr.length; i++) {
+            res[i] = Short.parseShort(arr[i]);
+        }
+        return res;
+    }
+
+    @Override
+    public void writeIntArray(String field, Integer[] values) {
+        writeKey(field);
+        for (Integer value : values) {
+            writeArrayEntry(String.valueOf(value));
+        }
+        newLine();
+    }
+
+    @Override
+    public Integer[] readIntArray(String field) throws ConfigValueMissingException {
+        String[] arr = this.getValueArray(field);
+        Integer[] res = new Integer[arr.length];
         for (int i = 0; i < arr.length; i++) {
             try {
                 res[i] = Integer.parseInt(arr[i]);
@@ -154,18 +230,18 @@ public class YamlFormat implements IConfigFormat {
     }
 
     @Override
-    public void writeLongArray(String field, long[] values) {
+    public void writeLongArray(String field, Long[] values) {
         writeKey(field);
-        for (long value : values) {
+        for (Long value : values) {
             writeArrayEntry(String.valueOf(value));
         }
         newLine();
     }
 
     @Override
-    public long[] readLongArray(String field) throws ConfigValueMissingException {
+    public Long[] readLongArray(String field) throws ConfigValueMissingException {
         String[] arr = this.getValueArray(field);
-        long[] res = new long[arr.length];
+        Long[] res = new Long[arr.length];
         for (int i = 0; i < arr.length; i++) {
             try {
                 res[i] = Long.parseLong(arr[i]);
@@ -177,18 +253,18 @@ public class YamlFormat implements IConfigFormat {
     }
 
     @Override
-    public void writeFloatArray(String field, float[] values) {
+    public void writeFloatArray(String field, Float[] values) {
         writeKey(field);
-        for (float value : values) {
+        for (Float value : values) {
             writeArrayEntry(String.valueOf(value));
         }
         newLine();
     }
 
     @Override
-    public float[] readFloatArray(String field) throws ConfigValueMissingException {
+    public Float[] readFloatArray(String field) throws ConfigValueMissingException {
         String[] arr = this.getValueArray(field);
-        float[] res = new float[arr.length];
+        Float[] res = new Float[arr.length];
         for (int i = 0; i < arr.length; i++) {
             try {
                 res[i] = Float.parseFloat(arr[i]);
@@ -200,18 +276,18 @@ public class YamlFormat implements IConfigFormat {
     }
 
     @Override
-    public void writeDoubleArray(String field, double[] values) {
+    public void writeDoubleArray(String field, Double[] values) {
         writeKey(field);
-        for (double value : values) {
+        for (Double value : values) {
             writeArrayEntry(String.valueOf(value));
         }
         newLine();
     }
 
     @Override
-    public double[] readDoubleArray(String field) throws ConfigValueMissingException {
+    public Double[] readDoubleArray(String field) throws ConfigValueMissingException {
         String[] arr = this.getValueArray(field);
-        double[] res = new double[arr.length];
+        Double[] res = new Double[arr.length];
         for (int i = 0; i < arr.length; i++) {
             try {
                 res[i] = Double.parseDouble(arr[i]);
@@ -370,13 +446,10 @@ public class YamlFormat implements IConfigFormat {
     }
 
     @Override
-    public void addComments(IDescriptionProvider provider) {
-        String[] comments = provider.getDescription();
-        if (comments.length > 0) {
-            for (String comment : comments) {
-                spaces();
-                buffer.append("# ").append(comment).append("\n");
-            }
+    public void addComments(String[] fileComments) {
+        for (String comment : fileComments) {
+            spaces();
+            buffer.append("# ").append(comment).append("\n");
         }
     }
 
@@ -386,9 +459,7 @@ public class YamlFormat implements IConfigFormat {
 
     private void spaces(int nestIndex) {
         if (nestIndex > 0) {
-            for (int i = 0; i < nestIndex * 2; i++) {
-                buffer.append(" ");
-            }
+            buffer.append(" ".repeat(Math.max(0, nestIndex * 2)));
         }
     }
 
