@@ -55,13 +55,11 @@ public class SliderWidget<N extends Number & Comparable<N>> extends AbstractThem
 
     @Override
     protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float deltaTick) {
-        guiGraphics.setColor(1.0F, 1.0F, 1.0F, this.alpha);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableDepthTest();
         this.renderBackground(guiGraphics);
         this.applyRenderer(this.handleRenderer, guiGraphics, this.getX() + (int)(this.value * (this.width - 8.0D)), this.getY(), 8, this.getHeight());
-        guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         int textColor = this.theme.getWidgetTextColor(this.active, this.isHovered);
         this.renderScrollingString(guiGraphics, font, 2, textColor);
     }

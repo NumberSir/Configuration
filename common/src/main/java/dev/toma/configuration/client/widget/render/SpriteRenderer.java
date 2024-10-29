@@ -1,6 +1,7 @@
 package dev.toma.configuration.client.widget.render;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.function.Supplier;
@@ -15,6 +16,6 @@ public class SpriteRenderer implements IRenderer {
 
     @Override
     public void draw(GuiGraphics graphics, int x, int y, int width, int height, boolean hovered) {
-        graphics.blitSprite(resourceProvider.get(), x, y, width, height);
+        graphics.blitSprite(RenderType::guiTextured, resourceProvider.get(), x, y, width, height);
     }
 }

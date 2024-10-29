@@ -27,10 +27,10 @@ import java.util.Optional;
 @Mod(Configuration.MODID)
 public class ConfigurationForge {
 
-    public ConfigurationForge() {
+    public ConfigurationForge(FMLJavaModLoadingContext context) {
         Configuration.setup();
 
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        IEventBus modEventBus = context.getModEventBus();
         modEventBus.addListener(this::init);
         modEventBus.addListener(this::clientInit);
 

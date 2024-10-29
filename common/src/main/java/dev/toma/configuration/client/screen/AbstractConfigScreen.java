@@ -18,6 +18,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -215,7 +216,7 @@ public abstract class AbstractConfigScreen extends Screen implements ConfigEntry
 
     public void renderValidationIcon(IValidationResult.Severity severity, GuiGraphics graphics, AbstractWidget widget, int x, int y) {
         ResourceLocation icon = severity.iconPath;
-        graphics.blit(icon, x, y, 0, 0.0F, 0.0F, 16, 16, 16, 16);
+        graphics.blit(RenderType::guiTextured, icon, x, y, 0.0F, 0.0F, 16, 16, 16, 16);
     }
 
     public void renderValidationText(IValidationResult.Severity severity, GuiGraphics graphics, List<FormattedCharSequence> texts, int mouseX, int mouseY, int textColor) {

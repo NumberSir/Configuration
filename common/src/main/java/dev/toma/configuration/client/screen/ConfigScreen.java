@@ -80,7 +80,6 @@ public class ConfigScreen extends AbstractConfigScreen {
         Component headerLabel = themeHeader.customText() != null ? themeHeader.customText() : this.title;
         int titleWidth = this.font.width(headerLabel);
         graphics.drawString(font, headerLabel, (this.width - titleWidth) / 2, (HEADER_HEIGHT - this.font.lineHeight) / 2, themeHeader.foregroundColor(), true);
-        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         graphics.fill(0, 0, width, HEADER_HEIGHT, themeHeader.backgroundColor());
         graphics.fill(0, height - FOOTER_HEIGHT, width, height, footer.backgroundColor());
         Integer fillColor = this.theme.getBackgroundFillColor();
